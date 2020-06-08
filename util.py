@@ -59,10 +59,10 @@ def loadmat(filename):
     return _check_keys(data)
 
 
-def rotating_mnist(images, labels, correcting=None):
+def rotating_data(images, labels, correcting=None):
 
-    expanded_images = []
-    expanded_labels = []
+    X = []
+    y = []
     bg_value = -0.5 # this is regarded as background's value black
     
     for image, label in zip(images, labels):
@@ -70,8 +70,8 @@ def rotating_mnist(images, labels, correcting=None):
         if correcting==None:
 
             # register original data
-            expanded_images.append(image)
-            expanded_labels.append(label)
+            X.append(image)
+            y.append(label)
             
             angles = [-45, -22.5, 22.5, 45]
             
@@ -79,19 +79,16 @@ def rotating_mnist(images, labels, correcting=None):
                 
                 new_img = ndimage.rotate(image,angle,reshape=False, cval=bg_value)
                 # register new training data
-                expanded_images.append(new_img)
-                expanded_labels.append(label)
+                X.append(new_img)
+                y.append(label)
         else:
             new_img = ndimage.rotate(image,correcting,reshape=False, cval=bg_value)
             # register new training data
-            expanded_images.append(new_img)
-            expanded_labels.append(label)            
+            X.append(new_img)
+            y.append(label)            
 
     # return them as arrays
-    expandedX=np.asarray(expanded_images)
-    expandedY=np.asarray(expanded_labels)
-
-    return expandedX, expandedY
+    return np.asarray(X), np.asarray(y)
 
 
 def save_rotated_MNIST(train_data, train_labels, test_data, test_labels):
@@ -115,15 +112,8 @@ def save_rotated_MNIST(train_data, train_labels, test_data, test_labels):
 
 
 
-def decoding_extended_mnist(images, labels, num):
-    ''' 
-    0 - 9 = digits
-    10 - 47 = uppercase and lower case "balanced" letters (see below for details)
-    '''
-    emnist_map = {}
-
-    dim = 28*28
-    
+def decoding_data(images, labels, num, dim):
+    #emnist_map = {}
     data = np.zeros(num * dim, dtype=np.uint8).reshape((num, dim))
     target = np.zeros(num, dtype=np.uint8).reshape((num, ))
 
@@ -139,17 +129,16 @@ def decoding_extended_mnist(images, labels, num):
     return data, target    
 
 
-def load_extended_mnist():
-    
-    train_images = 'data'+sep+'e_mnist'+sep+'emnist-balanced-train-images-idx3-ubyte.gz'
-    train_labels = 'data'+sep+'e_mnist'+sep+'emnist-balanced-train-labels-idx1-ubyte.gz'
-    test_images = 'data'+sep+'e_mnist'+sep+'emnist-balanced-test-images-idx3-ubyte.gz'
-    test_labels = 'data'+sep+'e_mnist'+sep+'emnist-balanced-test-labels-idx1-ubyte.gz'
+def load_balanced_emnist():
+    train_images = 'data'+sep+'original'+sep+'e_mnist'+sep+'emnist-balanced-train-images-idx3-ubyte.gz'
+    train_labels = 'data'+sep+'original'+sep+'e_mnist'+sep+'emnist-balanced-train-labels-idx1-ubyte.gz'
+    test_images = 'data'+sep+'original'+sep+'e_mnist'+sep+'emnist-balanced-test-images-idx3-ubyte.gz'
+    test_labels = 'data'+sep+'original'+sep+'e_mnist'+sep+'emnist-balanced-test-labels-idx1-ubyte.gz'
     num_train = 112800
     num_test = 18800
-
-    data_train, target_train = decoding_extended_mnist(train_images, train_labels, num_train)
-    data_test, target_test = decoding_extended_mnist(test_images, test_labels, num_test)
+    dim = 28*28
+    data_train, target_train = decoding_data(train_images, train_labels, num_train, dim)
+    data_test, target_test = decoding_data(test_images, test_labels, num_test, dim)
 
     return (data_train, target_train), (data_test, target_test)
 
@@ -220,6 +209,48 @@ def write_imagedata(imagedata, outputfile):
     f.write(header.tobytes())
     f.write(imagedata.tobytes())
 
+def save_data(x_train, y_train, x_test, y_test, drift_type, root_path='data'):
+    train_path = root_path+sep+'modified'+sep+drift_type+sep
+    train_images = train_path+'train-images-idx3-ubyte.gz'
+    train_labels = train_path+'train-labels-idx1-ubyte.gz'
+    
+    test_path = root_path+sep+'modified'+sep+drift_type+sep
+    test_images = test_path+'test-images-idx3-ubyte.gz'
+    test_labels = test_path+'test-labels-idx1-ubyte.gz'
+    
+    dim = x_train.shape[1]
+    
+    if x_test.shape[1] != x_test.shape[1]:
+        print("dimensions from train and test are different")
+        return False
+
+    header_train_img = np.array([0x0803, len(x_train), dim, dim], dtype='>i4')  
+    header_train_lbl = np.array([0x0803, len(y_train)], dtype='>i4')
+    header_test_img = np.array([0x0801, len(x_test), dim, dim], dtype='>i4')  
+    header_test_lbl = np.array([0x0801, len(y_test)], dtype='>i4')
+
+    #checking/creating directories
+    os.makedirs(os.path.dirname(train_images), exist_ok=True)
+    os.makedirs(os.path.dirname(train_labels), exist_ok=True)
+    os.makedirs(os.path.dirname(test_images), exist_ok=True)
+    os.makedirs(os.path.dirname(test_labels), exist_ok=True)
+    
+    #writing images
+    with open(train_images, "wb") as f:
+        f.write(header_train_img.tobytes())
+        f.write(x_train.tobytes())
+    with open(train_labels, "wb") as f:
+        f.write(header_train_lbl.tobytes())
+        f.write(y_train.tobytes())
+    with open(test_images, "wb") as f:
+        f.write(header_test_img.tobytes())
+        f.write(x_test.tobytes())
+    with open(test_labels, "wb") as f:
+        f.write(header_test_lbl.tobytes())
+        f.write(y_test.tobytes())
+
+    return True
+
 
 def transformations(name):
         
@@ -234,27 +265,21 @@ def transformations(name):
     e = [1]*repetitions
     f = [0]*repetitions #up/down (i.e. 5/-5)
 
-    if name == 'cht_mnist':
+    if name == 'cht':
         c = np.arange(boundary, -boundary-num_interp, -num_interp).tolist()
-    elif name == 'cvt_mnist':
+    elif name == 'cvt':
         f = np.arange(-boundary, boundary+num_interp, num_interp).tolist()
-    elif name == 'cdt_mnist':
+    elif name == 'cdt':
         c = np.arange(boundary, -boundary-num_interp, -num_interp).tolist()
         f = np.arange(-boundary, boundary+num_interp, num_interp).tolist()
-    #elif name == 'CVT':
-        #a = [i in range(boundary, -boundary, num_interp)]
-        #f = [i in range(0, boundary, num_interp)]
 
     return (a,b,c,d,e,f)
 
 
-def load_concept_mnist(images, labels, name):
-    #use this for testing
-    images = images[0:100]
-    labels = labels[0:100]
+def generate_data_translations(images, labels, name):
 
-    expanded_images = []
-    expanded_labels = []
+    X = []
+    y = []
 
     pixels_added = 18
     transf = transformations(name)
@@ -274,14 +299,11 @@ def load_concept_mnist(images, labels, name):
 
             new_img = np.array(new_img)
             # register new training data
-            expanded_images.append(new_img)
-            expanded_labels.append(label)
+            X.append(new_img)
+            y.append(label)
 
     # return them as arrays
-    expandedX=np.asarray(expanded_images)
-    expandedY=np.asarray(expanded_labels)
-    
-    return expandedX, expandedY
+    return np.asarray(X), np.asarray(y)
 
 
 def reshaping_data(x_train, x_test, img_rows, img_cols, img_dim):

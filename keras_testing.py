@@ -10,8 +10,11 @@ import dataset_loader as dl
 import DataGenerator as dg
 
 
-
-(x_train, y_train), (x_test, y_test) = dl.MNIST.load_data()
+dataset = dl.multiMNIST('mnist')
+#if you want to generate drift on the fly
+#(x_train, y_train), (x_test, y_test) = dataset.drift_data('cvt', mode='generate')
+# if you already generated drifted data and want to load it
+(x_train, y_train), (x_test, y_test) = dataset.drift_data('cvt', mode='load')
 
 #if you need to do transformations on data
 #x_train, x_test = util.reshaping_data(x_train, x_test, img_rows, img_cols, img_dim)
