@@ -9,6 +9,8 @@ from scipy import ndimage
 import gzip
 from PIL import Image
 import scipy.io as spio
+from skimage.transform import resize
+import idx2numpy
 
 
 def get_separator():
@@ -89,27 +91,6 @@ def rotating_data(images, labels, correcting=None):
 
     # return them as arrays
     return np.asarray(X), np.asarray(y)
-
-
-def save_rotated_MNIST(train_data, train_labels, test_data, test_labels):
-    if not os.path.isdir("data/train-images"):
-        os.makedirs("data/train-images")
-    if not os.path.isdir("data/test-images"):
-        os.makedirs("data/test-images")
-    # process train data
-    with open("data/train-labels.csv", 'w') as csvFile:
-        writer = csv.writer(csvFile, delimiter=',', quotechar='"')
-        for i in range(len(train_data)):
-            if i<20:
-                imsave("data/train-images/" + str(i) + ".jpg", train_data[i][:,:,0])
-            writer.writerow(["train-images/" + str(i) + ".jpg", train_labels[i]])
-    # repeat for test data
-    with open("data/test-labels.csv", 'w') as csvFile:
-        writer = csv.writer(csvFile, delimiter=',', quotechar='"')
-        for i in range(len(test_data)):
-            #imsave("mnist/test-images/" + str(i) + ".jpg", test_data[i][:,:,0])
-            writer.writerow(["test-images/" + str(i) + ".jpg", test_labels[i]])
-
 
 
 def decoding_data(images, labels, num, dim):
@@ -197,37 +178,21 @@ def load_batches_affnist(num_file):
     return (x_train, y_train), (x_test, y_test)
 
 
-def write_labeldata(labeldata, outputfile):
-  header = np.array([0x0801, len(labeldata)], dtype='>i4')
-  with open(outputfile, "wb") as f:
-    f.write(header.tobytes())
-    f.write(labeldata.tobytes())
-
-def write_imagedata(imagedata, outputfile):
-  header = np.array([0x0803, len(imagedata), 28, 28], dtype='>i4')
-  with open(outputfile, "wb") as f:
-    f.write(header.tobytes())
-    f.write(imagedata.tobytes())
-
-def save_data(x_train, y_train, x_test, y_test, drift_type, root_path='data'):
-    train_path = root_path+sep+'modified'+sep+drift_type+sep
-    train_images = train_path+'train-images-idx3-ubyte.gz'
-    train_labels = train_path+'train-labels-idx1-ubyte.gz'
+def save_data(x_train, y_train, x_test, y_test, dataset, drift_type, root_path='data'):
     
-    test_path = root_path+sep+'modified'+sep+drift_type+sep
-    test_images = test_path+'test-images-idx3-ubyte.gz'
-    test_labels = test_path+'test-labels-idx1-ubyte.gz'
+    train_path = root_path+sep+'modified'+sep+dataset+sep+drift_type+sep
+    train_images = train_path+'train-images-npy.gz'
+    train_labels = train_path+'train-labels-npy.gz'
+    
+    test_path = root_path+sep+'modified'+sep+dataset+sep+drift_type+sep
+    test_images = test_path+'test-images-npy.gz'
+    test_labels = test_path+'test-labels-npy.gz'
     
     dim = x_train.shape[1]
     
     if x_test.shape[1] != x_test.shape[1]:
         print("dimensions from train and test are different")
         return False
-
-    header_train_img = np.array([0x0803, len(x_train), dim, dim], dtype='>i4')  
-    header_train_lbl = np.array([0x0803, len(y_train)], dtype='>i4')
-    header_test_img = np.array([0x0801, len(x_test), dim, dim], dtype='>i4')  
-    header_test_lbl = np.array([0x0801, len(y_test)], dtype='>i4')
 
     #checking/creating directories
     os.makedirs(os.path.dirname(train_images), exist_ok=True)
@@ -236,27 +201,59 @@ def save_data(x_train, y_train, x_test, y_test, drift_type, root_path='data'):
     os.makedirs(os.path.dirname(test_labels), exist_ok=True)
     
     #writing images
-    with open(train_images, "wb") as f:
-        f.write(header_train_img.tobytes())
-        f.write(x_train.tobytes())
-    with open(train_labels, "wb") as f:
-        f.write(header_train_lbl.tobytes())
-        f.write(y_train.tobytes())
-    with open(test_images, "wb") as f:
-        f.write(header_test_img.tobytes())
-        f.write(x_test.tobytes())
-    with open(test_labels, "wb") as f:
-        f.write(header_test_lbl.tobytes())
-        f.write(y_test.tobytes())
+    f = gzip.GzipFile(train_images, "w")
+    np.save(file=f, arr=x_train)
+    f.close()
+
+    f = gzip.GzipFile(train_labels, "w")
+    np.save(file=f, arr=y_train)
+    f.close()
+    
+    f = gzip.GzipFile(test_images, "w")
+    np.save(file=f, arr=x_test)
+    f.close()
+
+    f = gzip.GzipFile(test_labels, "w")
+    np.save(file=f, arr=y_test)
+    f.close()
 
     return True
 
 
+def load_drift_mnist(dataset, drift_type, num_train, num_test, dim, root_path='data'):
+
+    train_path = root_path+sep+'modified'+sep+dataset+sep+drift_type+sep
+    train_images = train_path+'train-images-npy.gz'
+    train_labels = train_path+'train-labels-npy.gz'
+    
+    test_path = root_path+sep+'modified'+sep+dataset+sep+drift_type+sep
+    test_images = test_path+'test-images-npy.gz'
+    test_labels = test_path+'test-labels-npy.gz'
+
+    f = gzip.GzipFile(train_images, "r")
+    x_train = np.load(f)
+    #x_train = np.frombuffer(x_train)#, dtype=i.dtype
+    #x_train = np.fromfile(f)
+    
+    f = gzip.GzipFile(train_labels, "r")
+    y_train = np.load(f)
+
+    f = gzip.GzipFile(test_images, "r")
+    x_test = np.load(f)
+
+    f = gzip.GzipFile(test_labels, "r")
+    y_test = np.load(f)
+    
+    #print("load_drift_mnist: ", x_train.shape)
+
+    return (x_train, y_train), (x_test, y_test)
+
+
 def transformations(name):
         
-    num_interp = 4 #number of interpolations
+    step_size = 4 
     boundary = 20 #image limits from the center
-    repetitions = int(boundary/2)+1
+    repetitions = int(boundary/2)+1 #number of interpolations
 
     a = [1]*repetitions
     b = [0]*repetitions
@@ -266,12 +263,12 @@ def transformations(name):
     f = [0]*repetitions #up/down (i.e. 5/-5)
 
     if name == 'cht':
-        c = np.arange(boundary, -boundary-num_interp, -num_interp).tolist()
+        c = np.arange(boundary, -boundary-step_size, -step_size).tolist()
     elif name == 'cvt':
-        f = np.arange(-boundary, boundary+num_interp, num_interp).tolist()
+        f = np.arange(-boundary, boundary+step_size, step_size).tolist()
     elif name == 'cdt':
-        c = np.arange(boundary, -boundary-num_interp, -num_interp).tolist()
-        f = np.arange(-boundary, boundary+num_interp, num_interp).tolist()
+        c = np.arange(boundary, -boundary-step_size, -step_size).tolist()
+        f = np.arange(-boundary, boundary+step_size, step_size).tolist()
 
     return (a,b,c,d,e,f)
 
@@ -296,7 +293,8 @@ def generate_data_translations(images, labels, name):
             #print(t)
             img = Image.fromarray(image)
             new_img = img.transform(img.size, Image.AFFINE, t)
-
+            #new_img = resize(new_img, (32, 32))
+            new_img = img.resize((28, 28), Image.ANTIALIAS)
             new_img = np.array(new_img)
             # register new training data
             X.append(new_img)

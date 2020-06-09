@@ -11,11 +11,16 @@ import DataGenerator as dg
 
 
 dataset = dl.multiMNIST('mnist')
-#if you want to generate drift on the fly
+# if you want to generate drift on the fly
 #(x_train, y_train), (x_test, y_test) = dataset.drift_data('cvt', mode='generate')
 # if you already generated drifted data and want to load it
 (x_train, y_train), (x_test, y_test) = dataset.drift_data('cvt', mode='load')
-
+#if you want the original dataset
+#x_train, y_train, x_test, y_test = dataset.x_train, dataset.y_train, dataset.x_test, dataset.y_test
+print("x_train: ", x_train.shape)
+print("y_train: ", y_train.shape)
+print("x_test: ", x_test.shape)
+print("y_test: ", y_test.shape)
 #if you need to do transformations on data
 #x_train, x_test = util.reshaping_data(x_train, x_test, img_rows, img_cols, img_dim)
 #x_train, x_valid, y_train, y_valid = train_test_split(x_train,y_train, test_size = validation_size)
@@ -29,7 +34,7 @@ input_shape = (28, 28)
 model = Sequential()
 model.add(Conv2D(32, kernel_size=(3, 3),
                  activation='relu',
-                 input_shape=(28, 28 , 1)))
+                 input_shape=(28,28,1)))
 model.add(Conv2D(64, (3, 3), activation='relu'))
 model.add(MaxPool2D(pool_size=(2, 2)))
 model.add(Dropout(0.25))
