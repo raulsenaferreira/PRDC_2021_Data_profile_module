@@ -9,6 +9,8 @@ from tensorflow.keras.utils import to_categorical
 from datasets import Dataset
 from math import sqrt, floor
 import matplotlib.pyplot as plt
+import corruptions
+from PIL import Image
 
 
 def plot_images(data, labels, num_row, num_col):
@@ -29,6 +31,55 @@ cd_types = ['cvt', 'cht', 'cdt', 'rotated']
 anomaly_types = ['pixel_trap', 'row_add_logic', 'shifted_pixel']
 attack_types = ['FGSM']
 
+data = Dataset(datasets[1])
+x_train, y_train, x_test, y_test = data.load_dataset()
+#data = corruptions.defocus_blur(x_train[2], severity=2)
+#img = Image.fromarray(data, 'RGB')
+#img.show()
+
+import collections
+
+print('Using CIFAR-10 data')
+
+d = collections.OrderedDict()
+#d['Gaussian Noise'] = corruptions.gaussian_noise
+#d['Shot Noise'] = corruptions.shot_noise
+#d['Impulse Noise'] = corruptions.impulse_noise
+#d['Defocus Blur'] = corruptions.defocus_blur
+#d['Glass Blur'] = corruptions.glass_blur
+#d['Motion Blur'] = corruptions.motion_blur #failure
+#d['Zoom Blur'] = corruptions.zoom_blur
+#d['Snow'] = corruptions.snow #incluir figura
+#d['Frost'] = corruptions.frost #incluir figura
+#d['Fog'] = corruptions.fog #incluir figura
+#d['Brightness'] = corruptions.brightness
+#d['Contrast'] = corruptions.contrast
+#d['Elastic'] = corruptions.elastic_transform
+#d['Pixelate'] = corruptions.pixelate #failure
+#d['JPEG'] = corruptions.jpeg_compression #failure
+
+#d['Speckle Noise'] = corruptions.speckle_noise
+#d['Gaussian Blur'] = corruptions.gaussian_blur
+#d['Spatter'] = corruptions.spatter
+#d['Saturate'] = corruptions.saturate
+
+
+for method_name in d.keys():
+    print('Creating images for the corruption', method_name)
+    cifar_c, labels = [], []
+
+    for severity in [1, 5]:
+        corruption = lambda clean_img: d[method_name](clean_img, severity)
+
+        for img, label in zip(x_train[:20], y_train[:20]):
+            labels.append(label)
+            cifar_c.append(np.uint8(corruption(img)))
+    
+    plot_images(cifar_c, labels, num_row=4, num_col=10)
+
+
+
+'''
 for dataset in datasets:
     data = Dataset(dataset)
     x_train, y_train, x_test, y_test = data.load_dataset()
@@ -37,7 +88,7 @@ for dataset in datasets:
     #ts_ixs = [i for i in range(len(y_test)) if y_test[i] == 7]
     print(num_row_col, len(ind_uniques))
     plot_images(x_train[ind_uniques], uniques, num_row=num_row_col, num_col=num_row_col)
-
+'''
 
 '''
 dataset = dl.multiMNIST('mnist')
