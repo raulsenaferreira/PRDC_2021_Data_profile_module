@@ -40,13 +40,13 @@ def generate_models(filename, folder, datasets):
 sep =  get_separator()
 
 # datasets
-datasets = ['cifar10'] # mnist, 'gtsrb'
+datasets = ['mnist', 'cifar10', 'gtsrb'] #  
 folder = 'models'
 filename = '_tf_keras.h5'
 # uncomment and execute this line below (once) to build the base models
-generate_models(filename, folder, datasets)
+#generate_models(filename, folder, datasets)
 
-'''
+
 # models
 models = []
 
@@ -76,4 +76,3 @@ for dataset in datasets:
 	for attack_type in attack_types:
 		status = gd.generate_adversarial_data((train, test), dataset, ml_model, attack_type, persist_data = True)
 		print(dataset, attack_type, status)
-'''

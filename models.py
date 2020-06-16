@@ -94,8 +94,8 @@ class Models():
         x_train = x_train / 255
         x_test = x_test / 255
 
-        x_train = x_train.reshape((-1, img_rows, img_cols, channels))
-        x_test = x_test.reshape((-1, img_rows, img_cols, channels))
+        #x_train = x_train.reshape((-1, img_rows, img_cols, channels))
+        #x_test = x_test.reshape((-1, img_rows, img_cols, channels))
 
         y_train = tf.keras.utils.to_categorical(y_train, num_classes)
         y_test = tf.keras.utils.to_categorical(y_test, num_classes)
@@ -104,31 +104,44 @@ class Models():
         print(x_test.shape)
 
         model = Sequential()
-        model.add(Conv2D(8, (5, 5), input_shape=(img_rows, img_cols, channels),  activation="relu"))
-        model.add(MaxPooling2D(pool_size=(2, 2)))
-        model.add(Conv2D(16, (3, 3), activation="relu"))
-        model.add(BatchNormalization())
-        model.add(Conv2D(16, (3, 3), activation="relu"))
-        model.add(BatchNormalization())
-        model.add(MaxPooling2D(pool_size=(2, 2)))
- 
-        model.add(Conv2D(32, (3, 3), padding="same", activation="relu"))
-        model.add(BatchNormalization())
-        model.add(Conv2D(32, (3, 3), padding="same", activation="relu"))
-        model.add(BatchNormalization())
-        model.add(Flatten())
-        model.add(Dropout(0.5))
-        model.add(Dense(512, activation="relu"))
-        model.add(Dense(num_classes, activation="softmax"))
+        model.add(tf.keras.layers.Conv2D(32, (5, 5), padding='same', 
+            activation='relu', input_shape=(img_rows, img_cols, channels)))
+        model.add(tf.keras.layers.BatchNormalization(axis=-1))      
+        model.add(tf.keras.layers.MaxPooling2D(pool_size=(2, 2)))
+        model.add(tf.keras.layers.Dropout(0.2))
+                
+        model.add(tf.keras.layers.Conv2D(64, (5, 5), padding='same', 
+                                         activation='relu'))
+        model.add(tf.keras.layers.BatchNormalization(axis=-1))
+        model.add(tf.keras.layers.Conv2D(128, (5, 5), padding='same', 
+                                         activation='relu'))
+        model.add(tf.keras.layers.BatchNormalization(axis=-1))
+        model.add(tf.keras.layers.MaxPooling2D(pool_size=(2, 2)))
+        model.add(tf.keras.layers.Dropout(0.2))
+         
+        model.add(tf.keras.layers.Flatten())
+        model.add(tf.keras.layers.Dense(512, activation='relu'))
+        model.add(tf.keras.layers.BatchNormalization())
+        model.add(tf.keras.layers.Dropout(0.4))
+         
+        model.add(tf.keras.layers.Dense(43, activation='softmax'))
 
-        model.compile(optimizer='adam', loss='mse', metrics=['accuracy'])
+        #Compilation of the model
+
+        optimizer = tf.keras.optimizers.Adam(lr=0.001)
+        model.compile(loss='categorical_crossentropy', optimizer=optimizer, 
+                      metrics=['accuracy'])
+
+        history = model.fit(x_train, y_train, 
+                           validation_data=(x_test, y_test),
+                           epochs=10)
         
         model.summary()
 
-        model.fit(x_train, y_train,
-                  batch_size=32,
-                  epochs=20,
-                  validation_data=(x_test, y_test))
+        #model.fit(x_train, y_train,
+        #          batch_size=32,
+        #          epochs=20,
+        #          validation_data=(x_test, y_test))
         # Assess base model accuracy on regular images
         print("Base accuracy on regular images:", model.evaluate(x=x_test, y=y_test, verbose=0))
 
@@ -217,14 +230,14 @@ class Models():
         model.summary()
 
         # with augmentation
-        model = self.optimizing_model(x_train, y_train, x_test, y_test, model)
-        '''
+        #model = self.optimizing_model(x_train, y_train, x_test, y_test, model)
+        
         # without augmentation
         model.fit(x_train, y_train,
                   batch_size=64,
                   epochs=25,
                   validation_data=(x_test, y_test))
-        '''
+        
         # Assess base model accuracy on regular images
         print("Base accuracy on regular images:", model.evaluate(x=x_test, y=y_test, verbose=0))
 
