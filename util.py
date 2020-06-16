@@ -10,7 +10,6 @@ import gzip
 from PIL import Image
 import scipy.io as spio
 from skimage.transform import resize
-import idx2numpy
 
 
 def get_separator():
@@ -22,8 +21,11 @@ def get_separator():
 
     return sep
 
+#globals
 sep = get_separator()
-
+img_rows = 28
+img_cols = 28
+img_dim = 1
 
 def _check_keys(dict):
     '''
@@ -81,6 +83,8 @@ def rotating_data(images, labels, correcting=None):
                 
                 new_img = ndimage.rotate(image,angle,reshape=False, cval=bg_value)
                 # register new training data
+                #new_img = img.resize((28, 28), Image.ANTIALIAS)
+                #new_img = np.array(new_img)
                 X.append(new_img)
                 y.append(label)
         else:
@@ -117,10 +121,22 @@ def load_balanced_emnist():
     test_labels = 'data'+sep+'original'+sep+'e_mnist'+sep+'emnist-balanced-test-labels-idx1-ubyte.gz'
     num_train = 112800
     num_test = 18800
-    dim = 28*28
+    dim = img_cols*img_dim
     data_train, target_train = decoding_data(train_images, train_labels, num_train, dim)
     data_test, target_test = decoding_data(test_images, test_labels, num_test, dim)
+    data_train, data_test = reshaping_data(data_train, data_test, img_rows, img_cols, img_dim)
 
+    return (data_train, target_train), (data_test, target_test)
+
+
+def load_ardis_mnist():
+    #Reading data:
+    data_train=np.loadtxt('data'+sep+'original'+sep+'ardis_mnist'+sep+'ARDIS_train_2828.csv', dtype='float')
+    target_train=np.loadtxt('data'+sep+'original'+sep+'ardis_mnist'+sep+'ARDIS_train_labels.csv', dtype='float')
+    data_test=np.loadtxt('data'+sep+'original'+sep+'ardis_mnist'+sep+'ARDIS_test_2828.csv', dtype='float')
+    target_test=np.loadtxt('data'+sep+'original'+sep+'ardis_mnist'+sep+'ARDIS_test_labels.csv', dtype='float')
+    data_train, data_test = reshaping_data(data_train, data_test, img_rows, img_cols, img_dim)
+    
     return (data_train, target_train), (data_test, target_test)
 
 
@@ -274,7 +290,8 @@ def transformations(name):
 
 
 def generate_data_translations(images, labels, name):
-
+    orignal_dim = images[0].shape
+    #print("image.shape", images[0].shape)
     X = []
     y = []
 
@@ -284,17 +301,24 @@ def generate_data_translations(images, labels, name):
 
     for image, label in zip(images, labels):
         #increasing image
-        image = np.pad(image, ((pixels_added,pixels_added),(pixels_added,pixels_added)), 'constant')
-        #print(image.shape)    
+        if orignal_dim[2] == 1:
+            image = np.pad(image, ((pixels_added,pixels_added),(pixels_added,pixels_added)), 'constant')
+        elif orignal_dim[2] == 3:
+            image = np.pad(image, ((pixels_added,pixels_added),(pixels_added,pixels_added), (0, 0)), 'constant')    
+        
         for n in range(0, num_interp):
             #print(n)
             #print(transf[0][n])
             t = (transf[0][n], transf[1][n], transf[2][n], transf[3][n], transf[4][n], transf[5][n])
             #print(t)
-            img = Image.fromarray(image)
+            if orignal_dim[2] == 1:
+                img = Image.fromarray(image)
+            elif orignal_dim[2] == 3:
+                img = Image.fromarray(image.astype('uint8'), 'RGB')
+
             new_img = img.transform(img.size, Image.AFFINE, t)
             #new_img = resize(new_img, (32, 32))
-            new_img = img.resize((28, 28), Image.ANTIALIAS)
+            new_img = img.resize((orignal_dim[1], orignal_dim[2]), Image.ANTIALIAS)
             new_img = np.array(new_img)
             # register new training data
             X.append(new_img)
@@ -309,8 +333,8 @@ def reshaping_data(x_train, x_test, img_rows, img_cols, img_dim):
         x_train = x_train.reshape(x_train.shape[0], img_dim, img_rows, img_cols)
         x_test = x_test.reshape(x_test.shape[0], img_dim, img_rows, img_cols)
     else:
-        x_train = x_train.reshape(x_train.shape[0], img_rows, img_cols, img_dim)
-        x_test = x_test.reshape(x_test.shape[0], img_rows, img_cols, img_dim)
+        x_train = x_train.reshape(x_train.shape[0], img_rows, img_cols)
+        x_test = x_test.reshape(x_test.shape[0], img_rows, img_cols)
     
     x_train = x_train.astype('float32')
     x_test = x_test.astype('float32')
@@ -318,3 +342,25 @@ def reshaping_data(x_train, x_test, img_rows, img_cols, img_dim):
     x_test /= 255
 
     return x_train, x_test
+
+
+def anomaly(image, mode):
+    if mode == 'pixel_trap':
+        indices = np.random.choice(image.shape[0], 2, replace=False)
+        image[indices] = 0
+
+    elif mode == 'row_add_logic':
+        ind = int(image.shape[0]/2)-2
+        image[ind+1] = image[ind]
+        image[ind+2] = image[ind]
+        image[ind+3] = image[ind]
+        image[ind+4] = image[ind]
+    
+    elif mode == 'shifted_pixel':
+        max_shift = 5
+        m,n = image.shape[0], image.shape[1]
+        col_start = np.random.randint(0, max_shift, image.shape[0])
+        idx = np.mod(col_start[:,None] + np.arange(n), n)
+        image = image[np.arange(m)[:,None], idx]
+
+    return image

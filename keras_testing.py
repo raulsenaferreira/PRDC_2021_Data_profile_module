@@ -6,10 +6,40 @@ from keras.models import Model
 from keras.datasets import mnist
 from sklearn.model_selection import train_test_split
 from tensorflow.keras.utils import to_categorical
-import dataset_loader as dl
-import DataGenerator as dg
+from datasets import Dataset
+from math import sqrt, floor
+import matplotlib.pyplot as plt
 
 
+def plot_images(data, labels, num_row, num_col):
+
+    fig, axes = plt.subplots(num_row, num_col, figsize=(1.5*num_col,2*num_row))
+    for i in range(num_row*num_col):
+        ax = axes[i//num_col, i%num_col]
+        ax.imshow(np.squeeze(data[i]), cmap='gray')
+        ax.set_title('{}'.format(labels[i]))
+        ax.set_axis_off()
+    plt.tight_layout(pad=3.0)
+    plt.show()
+
+
+#testing
+datasets = ['mnist', 'cifar10', 'gtsrb']
+cd_types = ['cvt', 'cht', 'cdt', 'rotated']
+anomaly_types = ['pixel_trap', 'row_add_logic', 'shifted_pixel']
+attack_types = ['FGSM']
+
+for dataset in datasets:
+    data = Dataset(dataset)
+    x_train, y_train, x_test, y_test = data.load_dataset()
+    uniques, ind_uniques = np.unique(y_train, return_index=True)
+    num_row_col = floor(sqrt(len(ind_uniques)))
+    #ts_ixs = [i for i in range(len(y_test)) if y_test[i] == 7]
+    print(num_row_col, len(ind_uniques))
+    plot_images(x_train[ind_uniques], uniques, num_row=num_row_col, num_col=num_row_col)
+
+
+'''
 dataset = dl.multiMNIST('mnist')
 # if you want to generate drift on the fly
 #(x_train, y_train), (x_test, y_test) = dataset.drift_data('cvt', mode='generate')
@@ -28,41 +58,4 @@ print("y_test: ", y_test.shape)
 #print(x_train.shape[0], 'train samples')
 #print(x_test.shape[0], 'test samples')
 #y_valid = keras.utils.to_categorical(y_valid, num_classes)
-
-n_classes = 10
-input_shape = (28, 28)
-model = Sequential()
-model.add(Conv2D(32, kernel_size=(3, 3),
-                 activation='relu',
-                 input_shape=(28,28,1)))
-model.add(Conv2D(64, (3, 3), activation='relu'))
-model.add(MaxPool2D(pool_size=(2, 2)))
-model.add(Dropout(0.25))
-model.add(Flatten())
-model.add(Dense(128, activation='relu'))
-model.add(Dropout(0.5))
-model.add(Dense(n_classes, activation='softmax'))
-model.compile(loss=keras.losses.categorical_crossentropy,
-              optimizer=keras.optimizers.Adadelta(),
-              metrics=['accuracy'])
-
-train_generator = dg.DataGenerator(x_train, y_train, batch_size = 64,
-                                dim = input_shape,
-                                n_classes=10, 
-                                to_fit=True, shuffle=True)
-val_generator =  dg.DataGenerator(x_test, y_test, batch_size=64, 
-                               dim = input_shape, 
-                               n_classes= n_classes, 
-                               to_fit=True, shuffle=True)
-
-images, labels = next(train_generator)
-print(images.shape)
-print(labels.shape)
-steps_per_epoch = len(train_generator)
-validation_steps = len(val_generator)
-model.fit(
-        train_generator,
-        steps_per_epoch=steps_per_epoch,
-        epochs=10,
-        validation_data=val_generator,
-        validation_steps=validation_steps)
+'''
