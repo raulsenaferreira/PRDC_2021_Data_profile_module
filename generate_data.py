@@ -1,5 +1,6 @@
 import util
 import numpy as np
+import collections
 from threats import adv_attack
 from threats import corruptions
 from threats import anomalies
@@ -8,14 +9,19 @@ from threats import geometric_transformations
 
 
 def generate_translated_data(train, test, dataset, drift_type, persist_data = False):
+    row, col, dim = 28, 28, 1 #default for mnist
     success = False
     (x_train, y_train) = train
     (x_test, y_test) = test
-
+    
+    if dataset == 'cifar10':
+        row, col, dim = 32, 32, 3
+    elif dataset =='gtsrb':
+        row, col, dim = 28, 28, 3
     
     if drift_type == 'cvt' or drift_type == 'cht' or drift_type == 'cdt':
-        x_train, y_train = geometric_transformations.generate_data_translations(x_train, y_train, drift_type)
-        x_test, y_test = geometric_transformations.generate_data_translations(x_test, y_test, drift_type)
+        x_train, y_train = geometric_transformations.generate_data_translations(x_train, y_train, drift_type, row, col, dim)
+        x_test, y_test = geometric_transformations.generate_data_translations(x_test, y_test, drift_type, row, col, dim)
     
     elif drift_type=='rotated':
         x_train, y_train = geometric_transformations.rotating_data(x_train, y_train)
@@ -45,8 +51,8 @@ def generate_anomaly_data(train, test, dataset, anomaly_type, persist_data = Fal
     success = False
     (x_train, y_train) = train
     (x_test, y_test) = test
-    x_train = anomalies(x_train, anomaly_type)
-    x_test = anomalies(x_test, anomaly_type)
+    x_train = anomalies.anomaly(x_train, anomaly_type)
+    x_test = anomalies.anomaly(x_test, anomaly_type)
 
     if persist_data:
         success = util.save_data(x_train, y_train, x_test, y_test, dataset, anomaly_type)
@@ -56,13 +62,13 @@ def generate_anomaly_data(train, test, dataset, anomaly_type, persist_data = Fal
 
 def generate_adversarial_data(data, dataset_name, ml_model, attack_type, persist_data = False):
     success = False
-    x_train, y_train, x_test, y_test = None, None, None, None
+    x_train, y_train, y_wrong_train, x_test, y_test, y_wrong_test = None, None, None, None, None, None
     
     if attack_type == 'FGSM':
-        x_train, y_train, x_test, y_test = adv_attack.perform_attacks(data, ml_model, dataset_name)
+        x_train, y_train, y_wrong_train, x_test, y_test, y_wrong_test = adv_attack.perform_attacks(data, ml_model, dataset_name)
 
     if persist_data:
-        success = util.save_data(x_train, y_train, x_test, y_test, dataset_name, attack_type)
+        success = util.save_adversarial_data(x_train, y_train, y_wrong_train, x_test, y_test, y_wrong_test, dataset_name, attack_type)
 
     return success
 
@@ -85,10 +91,8 @@ def perform_corruptions(train, test, corruption, array_severity):
     return np.asarray(corrupted_x_train), np.asarray(corrupted_y_train), np.asarray(corrupted_x_test), np.asarray(corrupted_y_test)
 
 
-def generate_corrupted_data(data, dataset_name, corruption_type, persist_data = False):
+def generate_corrupted_data(train, test, dataset_name, corruption_type, persist_data = False):
     success = False
-    train = data[0]
-    test = data[1]
     array_severity = [1, 5]
 
     d = collections.OrderedDict()

@@ -82,6 +82,7 @@ def perform_attacks(data, ml_model, dataset_name):
     adversarials, correct_labels = next(generate_adversarials(num_adversaries_train, x_train, y_train))
     x_train_adv = []
     y_train_adv = []
+    y_train_miss = [] # wrong label given by the classifier
 
     for adversarial, correct_label in zip(adversarials, correct_labels):    
         adversarial.reshape((1, img_rows, img_cols, channels))
@@ -91,6 +92,7 @@ def perform_attacks(data, ml_model, dataset_name):
         #print(adv_exple, y_true)
         if adv_exple != y_true:
             y_train_adv.append(y_true)
+            y_train_miss.append(adv_exple)
             if channels == 1:
                 #plt.imshow(adversarial.reshape(img_rows, img_cols))
                 x_train_adv.append(adversarial.reshape(img_rows, img_cols))
@@ -105,6 +107,7 @@ def perform_attacks(data, ml_model, dataset_name):
     adversarials, correct_labels = next(generate_adversarials(num_adversaries_test, x_test, y_test))
     x_test_adv = []
     y_test_adv = []
+    y_test_miss = [] # wrong label given by the classifier
 
     for adversarial, correct_label in zip(adversarials, correct_labels):    
         adversarial.reshape((1, img_rows, img_cols, channels))
@@ -114,6 +117,7 @@ def perform_attacks(data, ml_model, dataset_name):
         #print(adv_exple, y_true)
         if adv_exple != y_true:
             y_test_adv.append(y_true)
+            y_test_miss.append(adv_exple)
             if channels == 1:
                 #plt.imshow(adversarial.reshape(img_rows, img_cols))
                 x_test_adv.append(adversarial.reshape(img_rows, img_cols))
@@ -124,7 +128,7 @@ def perform_attacks(data, ml_model, dataset_name):
     x_test_adv = np.asarray(x_test_adv)
     print("x_test_adv.shape: ", x_test_adv.shape)
 
-    return x_train_adv, y_train_adv, x_test_adv, y_test_adv
+    return x_train_adv, y_train_adv, y_train_miss, x_test_adv, y_test_adv, y_test_miss
 
     '''
     # Generate adversarial data

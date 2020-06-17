@@ -137,7 +137,7 @@ class Dataset:
             self.channels = 3
             img_rows, img_cols = 28, 28
 
-            self.trainPath = 'data'+self.sep+'original'+self.sep+'GTS_dataset'+self.sep
+            self.trainPath = 'data'+self.sep+'original'+self.sep+'GTSRB'+self.sep
             X_train, y_train = self.load_GTSRB_csv("Train.csv")
             X_test, y_test = self.load_GTSRB_csv("Test.csv") #self.load_GTRSB_csv(self.testPath)
 
@@ -176,6 +176,30 @@ class Dataset:
         try:
             (x_train, y_train), (x_test, y_test) = util.load_data(self.dataset_name, variation)
             return x_train, y_train, x_test, y_test
+        except:
+            print("Dataset not found!!")
+            return None
+
+
+    def load_dataset_adv(self, variation):
+        img_rows, img_cols, img_dim = 0, 0, 0
+
+        if self.dataset_name == 'mnist':
+            self.num_classes = 10
+            self.channels = 1
+            img_rows, img_cols = 28, 28
+        elif self.dataset_name == 'gtsrb':
+            self.num_classes = 43
+            self.channels = 3
+            img_rows, img_cols = 28, 28
+        elif self.dataset_name == 'cifar10':
+            self.num_classes = 10
+            self.channels = 3
+            img_rows, img_cols = 32, 32
+   
+        try:
+            (x_train, y_train, y_train_miss), (x_test, y_test, y_test_miss) = util.load_adv_data(self.dataset_name, variation)
+            return x_train, y_train, y_train_miss, x_test, y_test, y_test_miss
         except:
             print("Dataset not found!!")
             return None

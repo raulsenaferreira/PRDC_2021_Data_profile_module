@@ -79,10 +79,8 @@ def transformations(name):
     return (a,b,c,d,e,f)
 
 
-def generate_data_translations(images, labels, name):
+def generate_data_translations(images, labels, name, row, col, dim):
 
-    orignal_dim = images[0].shape
-    #print("image.shape", images[0].shape)
     X = []
     y = []
 
@@ -92,24 +90,24 @@ def generate_data_translations(images, labels, name):
 
     for image, label in zip(images, labels):
         #increasing image
-        if orignal_dim[2] == 1:
+        if dim == 1:
             image = np.pad(image, ((pixels_added,pixels_added),(pixels_added,pixels_added)), 'constant')
-        elif orignal_dim[2] == 3:
+        elif dim == 3:
             image = np.pad(image, ((pixels_added,pixels_added),(pixels_added,pixels_added), (0, 0)), 'constant')    
         
         for n in range(0, num_interp):
-            #print(n)
+            img = None
             #print(transf[0][n])
             t = (transf[0][n], transf[1][n], transf[2][n], transf[3][n], transf[4][n], transf[5][n])
             #print(t)
-            if orignal_dim[2] == 1:
+            if dim == 1:
                 img = Image.fromarray(image)
-            elif orignal_dim[2] == 3:
+            elif dim == 3:
                 img = Image.fromarray(image.astype('uint8'), 'RGB')
 
             new_img = img.transform(img.size, Image.AFFINE, t)
             #new_img = resize(new_img, (32, 32))
-            new_img = img.resize((orignal_dim[1], orignal_dim[2]), Image.ANTIALIAS)
+            new_img = img.resize((row, col), Image.ANTIALIAS)
             new_img = np.array(new_img)
             # register new training data
             X.append(new_img)
