@@ -37,33 +37,7 @@ x_train, y_train, x_test, y_test = data.load_dataset()
 #img = Image.fromarray(data, 'RGB')
 #img.show()
 
-import collections
-
-print('Using CIFAR-10 data')
-
-d = collections.OrderedDict()
-#d['Gaussian Noise'] = corruptions.gaussian_noise
-#d['Shot Noise'] = corruptions.shot_noise
-#d['Impulse Noise'] = corruptions.impulse_noise
-#d['Defocus Blur'] = corruptions.defocus_blur
-#d['Glass Blur'] = corruptions.glass_blur
-#d['Motion Blur'] = corruptions.motion_blur #failure
-#d['Zoom Blur'] = corruptions.zoom_blur
-#d['Snow'] = corruptions.snow #incluir figura
-#d['Frost'] = corruptions.frost #incluir figura
-#d['Fog'] = corruptions.fog #incluir figura
-#d['Brightness'] = corruptions.brightness
-#d['Contrast'] = corruptions.contrast
-#d['Elastic'] = corruptions.elastic_transform
-#d['Pixelate'] = corruptions.pixelate #failure
-#d['JPEG'] = corruptions.jpeg_compression #failure
-
-#d['Speckle Noise'] = corruptions.speckle_noise
-#d['Gaussian Blur'] = corruptions.gaussian_blur
-#d['Spatter'] = corruptions.spatter
-#d['Saturate'] = corruptions.saturate
-
-
+#plot corruptions (some bugs)
 for method_name in d.keys():
     print('Creating images for the corruption', method_name)
     cifar_c, labels = [], []

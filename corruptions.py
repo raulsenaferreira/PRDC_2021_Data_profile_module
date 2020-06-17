@@ -170,8 +170,8 @@ def glass_blur(x, severity=1):
 
     # locally shuffle pixels
     for i in range(c[2]):
-        for h in range(32 - c[1], c[1], -1):
-            for w in range(32 - c[1], c[1], -1):
+        for h in range(x.shape[1] - c[1], c[1], -1):
+            for w in range(x.shape[1] - c[1], c[1], -1):
                 dx, dy = np.random.randint(-c[1], c[1], size=(2,))
                 h_prime, w_prime = h + dy, w + dx
                 # swap
@@ -230,7 +230,7 @@ def fog(x, severity=1):
 
     x = np.array(x) / 255.
     max_val = x.max()
-    x += c[0] * plasma_fractal(wibbledecay=c[1])[:32, :32][..., np.newaxis]
+    x += c[0] * plasma_fractal(wibbledecay=c[1])[:x.shape[1], :x.shape[1]][..., np.newaxis]
     return np.clip(x * max_val / (max_val + c[0]), 0, 1) * 255
 
 
@@ -241,8 +241,8 @@ def frost(x, severity=1):
     frost = cv2.imread(filename)
     frost = cv2.resize(frost, (0, 0), fx=0.2, fy=0.2)
     # randomly crop and convert to rgb
-    x_start, y_start = np.random.randint(0, frost.shape[0] - 32), np.random.randint(0, frost.shape[1] - 32)
-    frost = frost[x_start:x_start + 32, y_start:y_start + 32][..., [2, 1, 0]]
+    x_start, y_start = np.random.randint(0, frost.shape[0] - x.shape[1]), np.random.randint(0, frost.shape[1] - x.shape[1])
+    frost = frost[x_start:x_start + x.shape[1], y_start:y_start + x.shape[1]][..., [2, 1, 0]]
 
     return np.clip(c[0] * np.array(x) + c[1] * frost, 0, 255)
 
@@ -271,7 +271,7 @@ def snow(x, severity=1):
                               cv2.IMREAD_UNCHANGED) / 255.
     snow_layer = snow_layer[..., np.newaxis]
 
-    x = c[6] * x + (1 - c[6]) * np.maximum(x, cv2.cvtColor(x, cv2.COLOR_RGB2GRAY).reshape(32, 32, 1) * 1.5 + 0.5)
+    x = c[6] * x + (1 - c[6]) * np.maximum(x, cv2.cvtColor(x, cv2.COLOR_RGB2GRAY).reshape(x.shape[1], x.shape[1], 1) * 1.5 + 0.5)
     return np.clip(x + snow_layer + np.rot90(snow_layer, k=2), 0, 1) * 255
 
 
@@ -374,15 +374,15 @@ def pixelate(x, severity=1):
     c = [0.95, 0.9, 0.85, 0.75, 0.65][severity - 1]
     print(PILImage.BOX)
 
-    x = x.resize((int(32 * c), int(32 * c)), PILImage.BOX)
-    x = x.resize((32, 32), PILImage.BOX)
+    x = x.resize((int(x.shape[1] * c), int(x.shape[1] * c)), PILImage.BOX)
+    x = x.resize((x.shape[1], x.shape[1]), PILImage.BOX)
 
     return x
 
 
 # mod of https://gist.github.com/erniejunior/601cdf56d2b424757de5
 def elastic_transform(image, severity=1):
-    IMSIZE = 32
+    IMSIZE = image.shape[1]
     c = [(IMSIZE*0, IMSIZE*0, IMSIZE*0.08),
          (IMSIZE*0.05, IMSIZE*0.2, IMSIZE*0.07),
          (IMSIZE*0.08, IMSIZE*0.06, IMSIZE*0.06),
