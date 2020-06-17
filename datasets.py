@@ -1,4 +1,3 @@
-import os
 import util
 import keras
 from keras.datasets import mnist
@@ -121,7 +120,7 @@ class Dataset:
         return x_train, y_train, x_test, y_test
 
 
-    def load_dataset(self, ):
+    def load_dataset(self):
         img_rows, img_cols, img_dim = 0, 0, 0
         data = []
 
@@ -131,7 +130,7 @@ class Dataset:
             img_rows, img_cols = 28, 28
          
             (x_train, y_train), (x_test, y_test) = mnist.load_data()
-            data = x_train, y_train, x_test, y_test
+            return x_train, y_train, x_test, y_test
 
         elif self.dataset_name == 'gtsrb':
             self.num_classes = 43
@@ -142,7 +141,7 @@ class Dataset:
             X_train, y_train = self.load_GTSRB_csv("Train.csv")
             X_test, y_test = self.load_GTSRB_csv("Test.csv") #self.load_GTRSB_csv(self.testPath)
 
-            data = X_train, y_train, X_test, y_test
+            return X_train, y_train, X_test, y_test
 
         elif self.dataset_name == 'cifar10':
             self.num_classes = 10
@@ -150,7 +149,7 @@ class Dataset:
             img_rows, img_cols = 32, 32
             (x_train, y_train), (x_test, y_test) = cifar10.load_data()
 
-            data = x_train, y_train, x_test, y_test
+            return x_train, y_train, x_test, y_test
         
         else:
             print("Dataset not found!!")
@@ -176,5 +175,10 @@ class Dataset:
             self.channels = 3
             img_rows, img_cols = 32, 32
 
-        if variation == '':    
-        pass
+        if variation == 'cvt':    
+            (x_train, y_train), (x_test, y_test) = util.load_data(self.dataset_name, variation)
+            return x_train, y_train, x_test, y_test
+        else:
+            print("Dataset not found!!")
+
+        return data

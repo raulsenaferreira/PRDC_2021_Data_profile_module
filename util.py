@@ -197,15 +197,14 @@ def save_data(x_train, y_train, x_test, y_test, dataset, drift_type, root_path='
     return True
 
 
-def load_drift_mnist(dataset, drift_type, num_train, num_test, dim, root_path='data'):
+def load_data(dataset, variation_type, root_path='data'):
 
-    train_path = root_path+sep+'modified'+sep+dataset+sep+drift_type+sep
-    train_images = train_path+'train-images-npy.gz'
-    train_labels = train_path+'train-labels-npy.gz'
+    fixed_path = root_path+sep+'modified'+sep+dataset+sep+variation_type+sep
+    train_images = fixed_path+'train-images-npy.gz'
+    train_labels = fixed_path+'train-labels-npy.gz'
     
-    test_path = root_path+sep+'modified'+sep+dataset+sep+drift_type+sep
-    test_images = test_path+'test-images-npy.gz'
-    test_labels = test_path+'test-labels-npy.gz'
+    test_images = fixed_path+'test-images-npy.gz'
+    test_labels = fixed_path+'test-labels-npy.gz'
 
     f = gzip.GzipFile(train_images, "r")
     x_train = np.load(f)
