@@ -1,7 +1,5 @@
 import numpy as np
-from math import sqrt, floor
 import matplotlib.pyplot as plt
-from PIL import Image
 
 
 def plot_images(data, labels, num_row, num_col):

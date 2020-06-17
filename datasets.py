@@ -158,9 +158,7 @@ class Dataset:
 
 
     def load_dataset_variation(self, variation):
-        # TODO
         img_rows, img_cols, img_dim = 0, 0, 0
-        data = []
 
         if self.dataset_name == 'mnist':
             self.num_classes = 10
@@ -174,11 +172,10 @@ class Dataset:
             self.num_classes = 10
             self.channels = 3
             img_rows, img_cols = 32, 32
-
-        if variation == 'cvt':    
+   
+        try:
             (x_train, y_train), (x_test, y_test) = util.load_data(self.dataset_name, variation)
             return x_train, y_train, x_test, y_test
-        else:
+        except:
             print("Dataset not found!!")
-
-        return data
+            return None
