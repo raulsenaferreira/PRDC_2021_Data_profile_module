@@ -69,50 +69,6 @@ class Dataset:
         return x_train, y_train, x_valid, y_valid, x_test, y_test, input_shape
 
 
-    def load_GTRSB_dataset(self, path, onehotencoder=True):
-        # Reading the input images and putting them into a numpy array
-        data=[]
-        labels=[]
-        
-        n_inputs = self.height * self.width * self.channels
-
-        for i in range(self.num_classes) :
-            path += str(i)+self.sep
-            #print(path)
-            Class=os.listdir(path)
-            for a in Class:
-                try:
-                    image=cv2.imread(path+a)
-                    image_from_array = Image.fromarray(image, 'RGB')
-                    size_image = image_from_array.resize((self.height, self.width))
-                    data.append(np.array(size_image))
-                    labels.append(i)
-                except AttributeError:
-                    print(" ")
-          
-        x_train=np.array(data)
-        x_train= x_train/255.0
-        y_train=np.array(labels)
-
-        s=np.arange(x_train.shape[0])
-        np.random.seed(self.num_classes)
-        np.random.shuffle(s)
-
-        x_train=x_train[s]
-        y_train=y_train[s]
-        # Split Data
-        #X_train,X_valid,Y_train,Y_valid = train_test_split(x_train,y_train,test_size = self.validation_size)
-        
-        #if onehotencoder:
-            #Using one hote encoding for the train and validation labels
-        #    Y_train = to_categorical(Y_train, self.num_classes)
-        #    Y_valid = to_categorical(Y_valid, self.num_classes)
-        print("Training set shape :", X_train.shape)
-        #print("Validation set shape :", X_valid.shape)
-        
-        return X_train, Y_train
-
-
     def load_GTSRB_csv(self, filename):
         n_inputs = self.height * self.width * self.channels
         y_test=pd.read_csv(self.trainPath+filename)
@@ -200,3 +156,8 @@ class Dataset:
             print("Dataset not found!!")
 
         return data
+
+
+    def load_dataset_variation(self, variation):
+        # TODO
+        pass

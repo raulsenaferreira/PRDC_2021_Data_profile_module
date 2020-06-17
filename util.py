@@ -1,15 +1,10 @@
-from __future__ import absolute_import, division, print_function, unicode_literals
 import sys
-import os
 import numpy as np
-import tensorflow as tf
 import keras
 import keras.backend as K
-from scipy import ndimage
 import gzip
 from PIL import Image
 import scipy.io as spio
-from skimage.transform import resize
 
 
 def get_separator():
@@ -61,40 +56,6 @@ def loadmat(filename):
     '''
     data = spio.loadmat(filename, struct_as_record=False, squeeze_me=True)
     return _check_keys(data)
-
-
-def rotating_data(images, labels, correcting=None):
-
-    X = []
-    y = []
-    bg_value = -0.5 # this is regarded as background's value black
-    
-    for image, label in zip(images, labels):
-
-        if correcting==None:
-
-            # register original data
-            X.append(image)
-            y.append(label)
-            
-            angles = [-45, -22.5, 22.5, 45]
-            
-            for angle in angles:
-                
-                new_img = ndimage.rotate(image,angle,reshape=False, cval=bg_value)
-                # register new training data
-                #new_img = img.resize((28, 28), Image.ANTIALIAS)
-                #new_img = np.array(new_img)
-                X.append(new_img)
-                y.append(label)
-        else:
-            new_img = ndimage.rotate(image,correcting,reshape=False, cval=bg_value)
-            # register new training data
-            X.append(new_img)
-            y.append(label)            
-
-    # return them as arrays
-    return np.asarray(X), np.asarray(y)
 
 
 def decoding_data(images, labels, num, dim):
@@ -265,69 +226,6 @@ def load_drift_mnist(dataset, drift_type, num_train, num_test, dim, root_path='d
     return (x_train, y_train), (x_test, y_test)
 
 
-def transformations(name):
-        
-    step_size = 4 
-    boundary = 20 #image limits from the center
-    repetitions = int(boundary/2)+1 #number of interpolations
-
-    a = [1]*repetitions
-    b = [0]*repetitions
-    c = [0]*repetitions #left/right (i.e. 5/-5)
-    d = [0]*repetitions
-    e = [1]*repetitions
-    f = [0]*repetitions #up/down (i.e. 5/-5)
-
-    if name == 'cht':
-        c = np.arange(boundary, -boundary-step_size, -step_size).tolist()
-    elif name == 'cvt':
-        f = np.arange(-boundary, boundary+step_size, step_size).tolist()
-    elif name == 'cdt':
-        c = np.arange(boundary, -boundary-step_size, -step_size).tolist()
-        f = np.arange(-boundary, boundary+step_size, step_size).tolist()
-
-    return (a,b,c,d,e,f)
-
-
-def generate_data_translations(images, labels, name):
-    orignal_dim = images[0].shape
-    #print("image.shape", images[0].shape)
-    X = []
-    y = []
-
-    pixels_added = 18
-    transf = transformations(name)
-    num_interp = len(transf[0])
-
-    for image, label in zip(images, labels):
-        #increasing image
-        if orignal_dim[2] == 1:
-            image = np.pad(image, ((pixels_added,pixels_added),(pixels_added,pixels_added)), 'constant')
-        elif orignal_dim[2] == 3:
-            image = np.pad(image, ((pixels_added,pixels_added),(pixels_added,pixels_added), (0, 0)), 'constant')    
-        
-        for n in range(0, num_interp):
-            #print(n)
-            #print(transf[0][n])
-            t = (transf[0][n], transf[1][n], transf[2][n], transf[3][n], transf[4][n], transf[5][n])
-            #print(t)
-            if orignal_dim[2] == 1:
-                img = Image.fromarray(image)
-            elif orignal_dim[2] == 3:
-                img = Image.fromarray(image.astype('uint8'), 'RGB')
-
-            new_img = img.transform(img.size, Image.AFFINE, t)
-            #new_img = resize(new_img, (32, 32))
-            new_img = img.resize((orignal_dim[1], orignal_dim[2]), Image.ANTIALIAS)
-            new_img = np.array(new_img)
-            # register new training data
-            X.append(new_img)
-            y.append(label)
-
-    # return them as arrays
-    return np.asarray(X), np.asarray(y)
-
-
 def reshaping_data(x_train, x_test, img_rows, img_cols, img_dim):
     if K.image_data_format() == 'channels_first':
         x_train = x_train.reshape(x_train.shape[0], img_dim, img_rows, img_cols)
@@ -342,25 +240,3 @@ def reshaping_data(x_train, x_test, img_rows, img_cols, img_dim):
     x_test /= 255
 
     return x_train, x_test
-
-
-def anomaly(image, mode):
-    if mode == 'pixel_trap':
-        indices = np.random.choice(image.shape[0], 2, replace=False)
-        image[indices] = 0
-
-    elif mode == 'row_add_logic':
-        ind = int(image.shape[0]/2)-2
-        image[ind+1] = image[ind]
-        image[ind+2] = image[ind]
-        image[ind+3] = image[ind]
-        image[ind+4] = image[ind]
-    
-    elif mode == 'shifted_pixel':
-        max_shift = 5
-        m,n = image.shape[0], image.shape[1]
-        col_start = np.random.randint(0, max_shift, image.shape[0])
-        idx = np.mod(col_start[:,None] + np.arange(n), n)
-        image = image[np.arange(m)[:,None], idx]
-
-    return image
