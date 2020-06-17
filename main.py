@@ -45,14 +45,13 @@ filename = '_tf_keras.h5'
 #generate_models(filename, folder, datasets)
 
 # datasets
-datasets = ['cifar10', 'gtsrb'] #  'mnist', 
+datasets = ['gtsrb'] #  'mnist', 'cifar10', 
 
 # ML threats
 cd_types = [] #['cvt', 'cht', 'cdt', 'rotated']
 anomaly_types = [] #['pixel_trap', 'row_add_logic', 'shifted_pixel']
 attack_types = [] #['FGSM']
-corruption_types = ['spatter', 'elastic_transform', 'gaussian_noise', 'shot_noise', 'impulse_noise', 'speckle_noise',
-                    'defocus_blur', 'glass_blur', 'zoom_blur', 'gaussian_blur', 'brightness', 'contrast', 'saturate']
+corruption_types = ['glass_blur', 'zoom_blur', 'gaussian_blur', 'brightness', 'contrast', 'saturate'] #'spatter', 'elastic_transform', 'gaussian_noise', 'shot_noise', 'impulse_noise', 'speckle_noise', 'defocus_blur', 
 
 for dataset in datasets:
 	data = Dataset(dataset)
