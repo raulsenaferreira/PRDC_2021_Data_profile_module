@@ -121,7 +121,7 @@ class Dataset:
         return x_train, y_train, x_test, y_test
 
 
-    def load_dataset(self):
+    def load_dataset(self, ):
         img_rows, img_cols, img_dim = 0, 0, 0
         data = []
 

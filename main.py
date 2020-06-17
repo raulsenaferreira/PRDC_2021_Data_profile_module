@@ -38,23 +38,20 @@ def generate_models(filename, folder, datasets):
 
 # globals
 sep =  get_separator()
-
-# datasets
-datasets = ['mnist', 'cifar10', 'gtsrb'] #  
 folder = 'models'
 filename = '_tf_keras.h5'
+
 # uncomment and execute this line below (once) to build the base models
 #generate_models(filename, folder, datasets)
 
-
-# models
-models = []
-
+# datasets
+datasets = ['gtsrb'] #  'mnist', 'cifar10', 
 
 # ML threats
-cd_types = []#['cvt', 'cht', 'cdt', 'rotated']
-anomaly_types = []#['pixel_trap', 'row_add_logic', 'shifted_pixel']
-attack_types = ['FGSM']
+cd_types = [] #['cvt', 'cht', 'cdt', 'rotated']
+anomaly_types = [] #['pixel_trap', 'row_add_logic', 'shifted_pixel']
+attack_types = [] #['FGSM']
+corruption_types = ['glass_blur', 'zoom_blur', 'gaussian_blur', 'brightness', 'contrast', 'saturate'] #'spatter', 'elastic_transform', 'gaussian_noise', 'shot_noise', 'impulse_noise', 'speckle_noise', 'defocus_blur', 
 
 for dataset in datasets:
 	data = Dataset(dataset)
@@ -76,3 +73,7 @@ for dataset in datasets:
 	for attack_type in attack_types:
 		status = gd.generate_adversarial_data((train, test), dataset, ml_model, attack_type, persist_data = True)
 		print(dataset, attack_type, status)
+
+	for corruption_type in corruption_types:
+		status = gd.generate_corrupted_data((train, test), dataset, corruption_type, persist_data = True)
+		print(dataset, corruption_type, status)

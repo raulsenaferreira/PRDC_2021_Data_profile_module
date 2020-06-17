@@ -6,8 +6,9 @@ from threats import anomalies
 from threats import geometric_transformations
 
 
+
 def generate_translated_data(train, test, dataset, drift_type, persist_data = False):
-    success = persist_data
+    success = False
     (x_train, y_train) = train
     (x_test, y_test) = test
 
@@ -41,7 +42,7 @@ def generate_translated_data(train, test, dataset, drift_type, persist_data = Fa
         
 
 def generate_anomaly_data(train, test, dataset, anomaly_type, persist_data = False):
-    success = persist_data
+    success = False
     (x_train, y_train) = train
     (x_test, y_test) = test
     x_train = anomalies(x_train, anomaly_type)
@@ -54,7 +55,8 @@ def generate_anomaly_data(train, test, dataset, anomaly_type, persist_data = Fal
 
 
 def generate_adversarial_data(data, dataset_name, ml_model, attack_type, persist_data = False):
-    success = persist_data
+    success = False
+    x_train, y_train, x_test, y_test = None, None, None, None
     
     if attack_type == 'FGSM':
         x_train, y_train, x_test, y_test = adv_attack.perform_attacks(data, ml_model, dataset_name)
@@ -65,13 +67,57 @@ def generate_adversarial_data(data, dataset_name, ml_model, attack_type, persist
     return success
 
 
-def generate_corrupted_data(data, dataset_name, ml_model, corruption_type, persist_data = False):
-    success = persist_data
+def perform_corruptions(train, test, corruption, array_severity):
+    corrupted_x_train, corrupted_y_train, corrupted_x_test, corrupted_y_test = [], [], [], []
+    (x_train, y_train) = train
+    (x_test, y_test) = test
+
+    print("corrupting train set")
+    for img, label in zip(x_train, y_train):
+        corrupted_y_train.append(label)
+        corrupted_x_train.append(np.uint8(corruption(img)))
     
-    #if attack_type == 'FGSM':
-    #    x_train, y_train, x_test, y_test = adv_attack.perform_attacks(data, ml_model, dataset_name)
+    print("corrupting test set")
+    for img, label in zip(x_test, y_test):
+        corrupted_y_test.append(label)
+        corrupted_x_test.append(np.uint8(corruption(img)))
 
-    #if persist_data:
-    #    success = util.save_data(x_train, y_train, x_test, y_test, dataset_name, attack_type)
+    return np.asarray(corrupted_x_train), np.asarray(corrupted_y_train), np.asarray(corrupted_x_test), np.asarray(corrupted_y_test)
 
+
+def generate_corrupted_data(data, dataset_name, corruption_type, persist_data = False):
+    success = False
+    train = data[0]
+    test = data[1]
+    array_severity = [1, 5]
+
+    d = collections.OrderedDict()
+    #d['Snow'] = corruptions.snow #incluir figura
+    #d['Frost'] = corruptions.frost #incluir figura
+    #d['Fog'] = corruptions.fog #incluir figura
+    d['spatter'] = corruptions.spatter
+    d['elastic_transform'] = corruptions.elastic_transform
+    d['gaussian_noise'] = corruptions.gaussian_noise
+    d['shot_noise'] = corruptions.shot_noise
+    d['impulse_noise'] = corruptions.impulse_noise
+    d['speckle_noise'] = corruptions.speckle_noise
+    d['defocus_blur'] = corruptions.defocus_blur
+    d['glass_blur'] = corruptions.glass_blur
+    d['zoom_blur'] = corruptions.zoom_blur
+    d['gaussian_blur'] = corruptions.gaussian_blur
+    #d['Motion Blur'] = corruptions.motion_blur #failure
+    d['brightness'] = corruptions.brightness
+    d['contrast'] = corruptions.contrast
+    d['saturate'] = corruptions.saturate
+    #d['Pixelate'] = corruptions.pixelate #failure
+    #d['JPEG'] = corruptions.jpeg_compression #failure    
+
+    for severity in array_severity:
+        corruption = lambda clean_img: d[corruption_type](clean_img, severity)
+        x_train, y_train, x_test, y_test = perform_corruptions(train, test, corruption, severity)
+
+        if persist_data:
+            success = util.save_data(x_train, y_train, x_test, y_test, dataset_name, corruption_type+"_severity_"+str(severity))
+            print(dataset_name, corruption_type+"_severity_"+str(severity), success)
+    
     return success

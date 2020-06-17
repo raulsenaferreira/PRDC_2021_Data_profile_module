@@ -9,29 +9,6 @@ import matplotlib.pyplot as plt
 #https://github.com/EvolvedSquid/tutorials/blob/master/adversarial-attacks-defenses/adversarial-tutorial.py
 
 def perform_attacks(data, ml_model, dataset_name):
-    (x_train, y_train) = data[0]
-    (x_test, y_test) = data[1]
-    dim = 1 if dataset_name =='mnist' else 3
-    img_rows, img_cols, channels, num_classes = x_train.shape[1], x_train.shape[2], dim, len(np.unique(y_train))
-    #(x_train, y_train), (x_test, y_test) = mnist.load_data()
-
-    # Cifar10
-    # labels = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
-
-    # MNIST
-    #labels = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine']
-
-    x_train = x_train / 255
-    x_test = x_test / 255
-
-    x_train = x_train.reshape((-1, img_rows, img_cols, channels))
-    x_test = x_test.reshape((-1, img_rows, img_cols, channels))
-    
-    y_train = tf.keras.utils.to_categorical(y_train, num_classes)
-    y_test = tf.keras.utils.to_categorical(y_test, num_classes)
-
-    print("Data shape", x_test.shape, y_test.shape, x_train.shape, y_train.shape)
-
 
     # Function to create adversarial pattern
     def adversarial_pattern(image, label):#, model):
@@ -73,6 +50,29 @@ def perform_attacks(data, ml_model, dataset_name):
             y = np.asarray(y)
             
             yield  x, y
+            
+    (x_train, y_train) = data[0]
+    (x_test, y_test) = data[1]
+    dim = 1 if dataset_name =='mnist' else 3
+    img_rows, img_cols, channels, num_classes = x_train.shape[1], x_train.shape[2], dim, len(np.unique(y_train))
+    #(x_train, y_train), (x_test, y_test) = mnist.load_data()
+
+    # Cifar10
+    # labels = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
+
+    # MNIST
+    #labels = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine']
+
+    x_train = x_train / 255
+    x_test = x_test / 255
+
+    x_train = x_train.reshape((-1, img_rows, img_cols, channels))
+    x_test = x_test.reshape((-1, img_rows, img_cols, channels))
+    
+    y_train = tf.keras.utils.to_categorical(y_train, num_classes)
+    y_test = tf.keras.utils.to_categorical(y_test, num_classes)
+
+    print("Data shape", x_test.shape, y_test.shape, x_train.shape, y_train.shape)
 
 
     num_adversaries_train = len(y_train)
