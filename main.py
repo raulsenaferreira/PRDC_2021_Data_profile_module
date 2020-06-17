@@ -1,4 +1,3 @@
-import os
 import sys
 from models import Models
 import generate_data as gd
