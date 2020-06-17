@@ -4,7 +4,7 @@ import adv_attack
 import corruptions
 
 
-def generate_drift_data(train, test, dataset, drift_type, persist_data = False):
+def generate_translated_data(train, test, dataset, drift_type, persist_data = False):
     success = persist_data
     (x_train, y_train) = train
     (x_test, y_test) = test
@@ -101,13 +101,13 @@ def generate_adversarial_data(data, dataset_name, ml_model, attack_type, persist
     return success
 
 
-def generate_corrupted_data(data, dataset_name, ml_model, attack_type, persist_data = False):
+def generate_corrupted_data(data, dataset_name, ml_model, corruption_type, persist_data = False):
     success = persist_data
     
-    if attack_type == 'FGSM':
-        x_train, y_train, x_test, y_test = adv_attack.perform_attacks(data, ml_model, dataset_name)
+    #if attack_type == 'FGSM':
+    #    x_train, y_train, x_test, y_test = adv_attack.perform_attacks(data, ml_model, dataset_name)
 
-    if persist_data:
-        success = util.save_data(x_train, y_train, x_test, y_test, dataset_name, attack_type)
+    #if persist_data:
+    #    success = util.save_data(x_train, y_train, x_test, y_test, dataset_name, attack_type)
 
     return success
