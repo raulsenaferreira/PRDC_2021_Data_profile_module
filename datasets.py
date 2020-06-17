@@ -160,4 +160,21 @@ class Dataset:
 
     def load_dataset_variation(self, variation):
         # TODO
+        img_rows, img_cols, img_dim = 0, 0, 0
+        data = []
+
+        if self.dataset_name == 'mnist':
+            self.num_classes = 10
+            self.channels = 1
+            img_rows, img_cols = 28, 28
+        elif self.dataset_name == 'gtsrb':
+            self.num_classes = 43
+            self.channels = 3
+            img_rows, img_cols = 28, 28
+        elif self.dataset_name == 'cifar10':
+            self.num_classes = 10
+            self.channels = 3
+            img_rows, img_cols = 32, 32
+
+        if variation == '':    
         pass
