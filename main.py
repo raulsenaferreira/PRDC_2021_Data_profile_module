@@ -45,13 +45,15 @@ filename = '_tf_keras.h5'
 #generate_models(filename, folder, datasets)
 
 # datasets
-datasets = ['gtsrb'] #  'mnist', 'cifar10', 
+datasets = ['mnist', 'cifar10', 'gtsrb'] #  
 
 # ML threats
-cd_types = [] #['cvt', 'cht', 'cdt', 'rotated']
-anomaly_types = [] #['pixel_trap', 'row_add_logic', 'shifted_pixel']
-attack_types = [] #['FGSM']
-corruption_types = ['glass_blur', 'zoom_blur', 'gaussian_blur', 'brightness', 'contrast', 'saturate'] #'spatter', 'elastic_transform', 'gaussian_noise', 'shot_noise', 'impulse_noise', 'speckle_noise', 'defocus_blur', 
+cd_types = ['cvt', 'cht', 'cdt', 'rotated']
+anomaly_types = ['pixel_trap', 'row_add_logic', 'shifted_pixel']
+attack_types = ['FGSM']
+# Specifically for cifar10 and gtsrb datasets. For mnist one can load the same corruptions from tf datasets
+corruption_types = ['spatter', 'elastic_transform', 'gaussian_noise', 'shot_noise', 'impulse_noise', 'speckle_noise', 'defocus_blur', 
+'glass_blur', 'zoom_blur', 'gaussian_blur', 'brightness', 'contrast', 'saturate'] 
 
 for dataset in datasets:
 	data = Dataset(dataset)
