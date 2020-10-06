@@ -23,6 +23,13 @@ img_rows = 28
 img_cols = 28
 img_dim = 1
 
+
+def unison_shuffled_copies(a, b):
+    assert len(a) == len(b)
+    p = np.random.permutation(len(a))
+    return a[p], b[p]
+
+
 def _check_keys(dict):
     '''
     checks if entries in dictionary are mat-objects. If yes

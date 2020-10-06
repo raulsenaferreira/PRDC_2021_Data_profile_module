@@ -125,3 +125,20 @@ def generate_corrupted_data(train, test, dataset_name, corruption_type, persist_
             print(dataset_name, corruption_type+"_severity_"+str(severity), success)
     
     return success
+
+
+def generate_novelty():
+    #loading OOD dataset
+    OOD_dataset = Dataset(ood_dataset_name)
+    
+    ood_X, ood_y = OOD_dataset.load_dataset(mode='test_entire_data')
+    ood_y += classes_to_monitor_ID #avoiding same class numbers for the two datasets
+
+    #concatenate and shuffling ID and OOD datasets
+    X = np.vstack([X, ood_X])
+    y = np.hstack([y, ood_y])
+    X, y = unison_shuffled_copies(X, y)
+
+    print("Final dataset shape", X.shape, y.shape)
+    dataset.dataset_ID_name = dataset_name
+    dataset.dataset_OOD_name = ood_dataset_name
