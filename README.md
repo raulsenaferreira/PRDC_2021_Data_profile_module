@@ -6,3 +6,7 @@ python -m venv env
 .\env\Scripts\activate
 
 pip install -r requirements.txt
+
+## arguments
+
+python main.py threat_type 1 0 0 path_for_saving_data
