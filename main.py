@@ -76,9 +76,9 @@ if __name__ == "__main__":
 		ml_model = tf.keras.models.load_model(model_file)
 	'''
 	if args.sub_field_arg == 'novelty_detection':
-		for novelty in novelty_types:
-			status = gd.generate_novelty_data(novelty, args.save_experiments, args.parallel_execution, args.verbose, args.dir_path_write)
-			print(novelty, status)
+		for dataset_names in novelty_types:
+			status = gd.generate_novelty_data(dataset_names, args.save_experiments, args.parallel_execution, args.verbose, args.dir_path_write) # , proportion=0.3 = percentage of ID data kept for test data
+			print(dataset_names, status)
 
 	elif args.sub_field_arg == 'distributional_shift':
 		for cd_type in cd_types:

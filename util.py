@@ -164,7 +164,6 @@ def load_batches_affnist(num_file):
 
 
 def save_data(x_train, y_train, x_test, y_test, dataset, transformation_type, root_path='data'):
-    
     train_path = root_path+sep+'modified'+sep+dataset+sep+transformation_type+sep
     train_images = train_path+'train-images-npy.gz'
     train_labels = train_path+'train-labels-npy.gz'
@@ -172,6 +171,49 @@ def save_data(x_train, y_train, x_test, y_test, dataset, transformation_type, ro
     test_path = root_path+sep+'modified'+sep+dataset+sep+transformation_type+sep
     test_images = test_path+'test-images-npy.gz'
     test_labels = test_path+'test-labels-npy.gz'
+    
+    dim = x_train.shape[1]
+    
+    if x_test.shape[1] != x_test.shape[1]:
+        print("dimensions from train and test are different")
+        return False
+
+    #checking/creating directories
+    os.makedirs(os.path.dirname(train_images), exist_ok=True)
+    os.makedirs(os.path.dirname(train_labels), exist_ok=True)
+    os.makedirs(os.path.dirname(test_images), exist_ok=True)
+    os.makedirs(os.path.dirname(test_labels), exist_ok=True)
+    
+    #writing images
+    f = gzip.GzipFile(train_images, "w")
+    np.save(file=f, arr=x_train)
+    f.close()
+
+    f = gzip.GzipFile(train_labels, "w")
+    np.save(file=f, arr=y_train)
+    f.close()
+    
+    f = gzip.GzipFile(test_images, "w")
+    np.save(file=f, arr=x_test)
+    f.close()
+
+    f = gzip.GzipFile(test_labels, "w")
+    np.save(file=f, arr=y_test)
+    f.close()
+
+    return True
+
+
+def save_data_novelty(x_train, y_train, x_test, y_test, dataset_names, root_path):
+    transformation_type = 'novelty_detection'
+    dataset_name = '{}_{}'.format(dataset_names[0], dataset_names[1])
+
+    data_path = os.path.join(root_path, 'modified', transformation_type, dataset_name)
+    train_images = os.path.join(data_path, 'train-images-npy.gz')
+    train_labels = os.path.join(data_path, 'train-labels-npy.gz')
+    
+    test_images = os.path.join(data_path, 'test-images-npy.gz')
+    test_labels = os.path.join(data_path, 'test-labels-npy.gz')
     
     dim = x_train.shape[1]
     

@@ -5,6 +5,7 @@ from threats import adv_attack
 from threats import corruptions
 from threats import anomalies
 from threats import geometric_transformations
+from datasets import Dataset
 
 
 
@@ -127,18 +128,31 @@ def generate_corrupted_data(train, test, dataset_name, corruption_type, persist_
     return success
 
 
-def generate_novelty():
+def generate_novelty_data(dataset_names, save_experiments, parallel_execution, verbose, dir_path_write):
+    ### rule for building novelty data
+    # train with ID training data
+    # test with 100% of OOD data (training + test) + ID testing data
+    success = False
+
+    #loading ID dataset
+    ID_dataset = Dataset(dataset_names[0])
+    x_train, y_train, x_ID_test, y_ID_test = ID_dataset.load_dataset()
+    print("Training set shape", x_train.shape, y_train.shape)
+
     #loading OOD dataset
-    OOD_dataset = Dataset(ood_dataset_name)
-    
-    ood_X, ood_y = OOD_dataset.load_dataset(mode='test_entire_data')
-    ood_y += classes_to_monitor_ID #avoiding same class numbers for the two datasets
+    OOD_dataset = Dataset(dataset_names[1])
+    x_OOD_train, y_OOD_train, x_OOD_test, y_OOD_test = OOD_dataset.load_dataset()
 
-    #concatenate and shuffling ID and OOD datasets
-    X = np.vstack([X, ood_X])
-    y = np.hstack([y, ood_y])
-    X, y = unison_shuffled_copies(X, y)
+    ood_X, ood_y = np.vstack([x_OOD_train, x_OOD_test]), np.hstack([y_OOD_train, y_OOD_test])
+    ood_y += ID_dataset.num_classes # avoiding same class numbers for the two datasets
 
-    print("Final dataset shape", X.shape, y.shape)
-    dataset.dataset_ID_name = dataset_name
-    dataset.dataset_OOD_name = ood_dataset_name
+    # concatenating and shuffling ID and OOD datasets for test
+    x_test = np.vstack([x_ID_test, ood_X])
+    y_test = np.hstack([y_ID_test, ood_y])
+    x_test, y_test = util.unison_shuffled_copies(x_test, y_test)
+    print("Final testing set shape", x_test.shape, y_test.shape)
+
+    if save_experiments:
+        success = util.save_data_novelty(x_train, y_train, x_test, y_test, dataset_names, dir_path_write)
+
+    return success

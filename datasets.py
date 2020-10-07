@@ -1,3 +1,4 @@
+import os
 import util
 import keras
 from keras.datasets import mnist
@@ -17,10 +18,10 @@ class Dataset:
     def __init__(self, dataset_name):
         super(Dataset, self).__init__()
         self.dataset_name = dataset_name
+        self.data_dir = os.path.join('data', 'original')
         self.width = 28
         self.height = 28
         self.channels = 0
-        self.sep = util.get_separator()
         self.testPath = ''
         self.num_classes = 0
         self.trainPath = ''
@@ -70,24 +71,24 @@ class Dataset:
 
     def load_GTSRB_csv(self, filename):
         n_inputs = self.height * self.width * self.channels
-        y_test=pd.read_csv(self.trainPath+filename)
-        labels=y_test['Path'].values
-        y_test=y_test['ClassId'].values
-        y_test=np.array(y_test)
+        y=pd.read_csv(os.path.join(self.data_dir, filename))
+        labels=y['Path'].values
+        y=y['ClassId'].values
+        y=np.array(y)
 
         d=[]
         for j in labels:
-            path = self.trainPath+j.replace("/", "\\")
+            path = os.path.join(self.data_dir, j.replace("/", "\\"))
             
             i1=cv2.imread(path)
             i2=Image.fromarray(i1,'RGB')
             i3=i2.resize((self.height, self.width))
             d.append(np.array(i3))
 
-        X_test=np.array(d)
-        X_test = X_test.astype('float32')/255 
-        print("Shape :", X_test.shape, y_test.shape)
-        return X_test, y_test
+        X=np.array(d)
+        X = X.astype('float32')/255 
+        print("Shape :", X.shape, y.shape)
+        return X, y
 
 
     def load_cifar10(self, trainPath, testPath):
@@ -120,14 +121,56 @@ class Dataset:
         return x_train, y_train, x_test, y_test
 
 
+    def load_BTSC_dataset(self, folder, onehotencoder=False):
+        # Reading the input images and putting them into a numpy array
+        images=[]
+        labels=[]
+        
+        directories = [d for d in os.listdir(folder) if os.path.isdir(os.path.join(folder, d))]
+        
+        n_inputs = self.height * self.width * self.channels
+
+        for d in directories:
+            label_dir = os.path.join(folder, d)
+            file_names = [os.path.join(label_dir, f) for f in os.listdir(label_dir) if f.endswith(".ppm")]
+
+            for f in file_names:
+                image=cv2.imread(f)
+                #image=skimage.data.imread(f)
+                image_from_array = Image.fromarray(image, 'RGB')
+                size_image = image_from_array.resize((self.height, self.width))
+                image = np.array(size_image)
+
+                images.append(image)
+                labels.append(int(d))
+
+        X=np.array(images)
+        X= X/255.0
+        y=np.array(labels)
+        '''
+        s=np.arange(X.shape[0])
+        np.random.seed(self.num_classes)
+        np.random.shuffle(s)
+
+        X=X[s]
+        y=y[s]
+        '''
+        if onehotencoder:
+            #Using one hote encoding for the train and validation labels
+            y = to_categorical(y, self.num_classes)
+
+        print("data shape :", X.shape)
+        print("label shape :", y.shape)
+                
+        return X, y
+
+
     def load_dataset(self):
-        img_rows, img_cols, img_dim = 0, 0, 0
-        data = []
 
         if self.dataset_name == 'mnist':
             self.num_classes = 10
             self.channels = 1
-            img_rows, img_cols = 28, 28
+            self.height, self.width = 28, 28
          
             (x_train, y_train), (x_test, y_test) = mnist.load_data()
             return x_train, y_train, x_test, y_test
@@ -135,26 +178,37 @@ class Dataset:
         elif self.dataset_name == 'gtsrb':
             self.num_classes = 43
             self.channels = 3
-            img_rows, img_cols = 28, 28
+            self.height, self.width = 28, 28
 
-            self.trainPath = 'data'+self.sep+'original'+self.sep+'GTSRB'+self.sep
+            self.data_dir = os.path.join(self.data_dir, 'GTSRB')
             X_train, y_train = self.load_GTSRB_csv("Train.csv")
-            X_test, y_test = self.load_GTSRB_csv("Test.csv") #self.load_GTRSB_csv(self.testPath)
+            X_test, y_test = self.load_GTSRB_csv("Test.csv")
 
             return X_train, y_train, X_test, y_test
 
         elif self.dataset_name == 'cifar10':
             self.num_classes = 10
             self.channels = 3
-            img_rows, img_cols = 32, 32
+            self.height, self.width = 32, 32
             (x_train, y_train), (x_test, y_test) = cifar10.load_data()
 
             return x_train, y_train, x_test, y_test
+
+        elif self.dataset_name == 'btsc':
+            self.num_classes = 62
+            self.channels = 3
+            self.height, self.width = 28, 28
+
+            folder = os.path.join(self.data_dir, 'BTSC', "Training")
+            x_train, y_train = self.load_BTSC_dataset(folder)
+            folder = os.path.join(self.data_dir, 'BTSC', "Testing")
+            x_test, y_test = self.load_BTSC_dataset(folder)
         
+            return x_train, y_train, x_test, y_test
+
         else:
             print("Dataset not found!!")
-
-        return data
+            return None
 
 
     def load_dataset_variation(self, variation):
@@ -280,63 +334,7 @@ def load_cifar_10(self, subtract_pixel_mean = True, onehotencoder=True):
         return x_train, y_train, x_valid, y_valid, x_test, y_test, input_shape
 
 
-    def load_BTSC_dataset(self, mode, onehotencoder):
-        # Reading the input images and putting them into a numpy array
-        images=[]
-        labels=[]
-        data_dir = ''
-
-        if mode == 'train':
-            data_dir = self.trainPath
-        elif mode == 'test':
-            data_dir = self.testPath
-            
-        directories = [d for d in os.listdir(data_dir) if os.path.isdir(os.path.join(data_dir, d))]
-        
-        n_inputs = self.height * self.width * self.channels
-
-        for d in directories:
-            label_dir = os.path.join(data_dir, d)
-            file_names = [os.path.join(label_dir, f) for f in os.listdir(label_dir) if f.endswith(".ppm")]
-
-            for f in file_names:
-                image=cv2.imread(f)
-                #image=skimage.data.imread(f)
-                image_from_array = Image.fromarray(image, 'RGB')
-                size_image = image_from_array.resize((self.height, self.width))
-                image = np.array(size_image)
-
-                images.append(image)
-                labels.append(int(d))
-
-        X=np.array(images)
-        X= X/255.0
-        y=np.array(labels)
-
-        s=np.arange(X.shape[0])
-        np.random.seed(self.num_classes)
-        np.random.shuffle(s)
-
-        X=X[s]
-        y=y[s]
-        
-        if mode == 'train':
-            # Split Data
-            X_train,X_valid,Y_train,Y_valid = train_test_split(X,y,test_size = self.validation_size)
-            
-            if onehotencoder:
-                #Using one hote encoding for the train and validation labels
-                Y_train = to_categorical(Y_train, self.num_classes)
-                Y_valid = to_categorical(Y_valid, self.num_classes)
-            print("Training set shape :", X_train.shape)
-            #print(X_valid.shape[0], 'validation samples')
-            print("Validation set shape :", X_valid.shape)
-            
-            return X_train,X_valid,Y_train,Y_valid
-
-        else:
-            print("Testing set shape :", X.shape)
-            return X, y
+    
 
 
     def load_GTRSB_dataset(self, onehotencoder):
