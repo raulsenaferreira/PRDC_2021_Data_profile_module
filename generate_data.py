@@ -6,7 +6,7 @@ from threats import corruptions
 from threats import anomalies
 from threats import geometric_transformations
 from datasets import Dataset
-
+from skimage.transform import resize
 
 
 def generate_translated_data(train, test, dataset, drift_type, persist_data = False):
@@ -48,7 +48,7 @@ def generate_translated_data(train, test, dataset, drift_type, persist_data = Fa
         return success
         
 
-def generate_anomaly_data(train, test, dataset, anomaly_type, persist_data = False):
+def generate_anomaly_data(train, test, dataset, anomaly_type, persist_data):
     success = False
     (x_train, y_train) = train
     (x_test, y_test) = test
@@ -56,7 +56,7 @@ def generate_anomaly_data(train, test, dataset, anomaly_type, persist_data = Fal
     x_test = anomalies.anomaly(x_test, anomaly_type)
 
     if persist_data:
-        success = util.save_data(x_train, y_train, x_test, y_test, dataset, anomaly_type)
+        success = util.save_data(x_train, y_train, x_test, y_test, dataset, 'anomaly_detection', anomaly_type)
         
         return success
 
@@ -138,13 +138,19 @@ def generate_novelty_data(dataset_names, save_experiments, parallel_execution, v
     ID_dataset = Dataset(dataset_names[0])
     x_train, y_train, x_ID_test, y_ID_test = ID_dataset.load_dataset()
     print("Training set shape", x_train.shape, y_train.shape)
+    print("Testing set shape", x_ID_test.shape, y_ID_test.shape)
 
     #loading OOD dataset
     OOD_dataset = Dataset(dataset_names[1])
     x_OOD_train, y_OOD_train, x_OOD_test, y_OOD_test = OOD_dataset.load_dataset()
 
-    ood_X, ood_y = np.vstack([x_OOD_train, x_OOD_test]), np.hstack([y_OOD_train, y_OOD_test])
+    ood_X = np.vstack([x_OOD_train, x_OOD_test])
+    ood_y = np.concatenate((y_OOD_train, y_OOD_test), axis=None)
     ood_y += ID_dataset.num_classes # avoiding same class numbers for the two datasets
+    
+    # resizing images to be equally if necessaire
+    if ood_X.shape[1] != x_ID_test.shape[1]:
+        ood_X = resize(ood_X, (len(ood_X), x_ID_test.shape[1], x_ID_test.shape[2], x_ID_test.shape[3]))
 
     # concatenating and shuffling ID and OOD datasets for test
     x_test = np.vstack([x_ID_test, ood_X])

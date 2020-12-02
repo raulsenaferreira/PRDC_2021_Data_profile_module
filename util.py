@@ -163,12 +163,12 @@ def load_batches_affnist(num_file):
     return (x_train, y_train), (x_test, y_test)
 
 
-def save_data(x_train, y_train, x_test, y_test, dataset, transformation_type, root_path='data'):
-    train_path = root_path+sep+'modified'+sep+dataset+sep+transformation_type+sep
+def save_data(x_train, y_train, x_test, y_test, dataset, threat_type, transformation_type, root_path='data'):
+    train_path = root_path+sep+'training_set'+sep+threat_type+sep+dataset+sep+transformation_type+sep
     train_images = train_path+'train-images-npy.gz'
     train_labels = train_path+'train-labels-npy.gz'
     
-    test_path = root_path+sep+'modified'+sep+dataset+sep+transformation_type+sep
+    test_path = root_path+sep+'benchmark_dataset'+sep+threat_type+sep+dataset+sep+transformation_type+sep
     test_images = test_path+'test-images-npy.gz'
     test_labels = test_path+'test-labels-npy.gz'
     
@@ -208,12 +208,13 @@ def save_data_novelty(x_train, y_train, x_test, y_test, dataset_names, root_path
     transformation_type = 'novelty_detection'
     dataset_name = '{}_{}'.format(dataset_names[0], dataset_names[1])
 
-    data_path = os.path.join(root_path, 'modified', transformation_type, dataset_name)
+    data_path = os.path.join(root_path, 'training_set', transformation_type, dataset_name)
     train_images = os.path.join(data_path, 'train-images-npy.gz')
     train_labels = os.path.join(data_path, 'train-labels-npy.gz')
     
-    test_images = os.path.join(data_path, 'test-images-npy.gz')
-    test_labels = os.path.join(data_path, 'test-labels-npy.gz')
+    test_path = os.path.join(root_path, 'benchmark_dataset', transformation_type, dataset_name)
+    test_images = os.path.join(test_path, 'test-images-npy.gz')
+    test_labels = os.path.join(test_path, 'test-labels-npy.gz')
     
     dim = x_train.shape[1]
     
@@ -248,12 +249,13 @@ def save_data_novelty(x_train, y_train, x_test, y_test, dataset_names, root_path
 
 
 def save_adversarial_data(x_train, y_train, y_wrong_train, x_test, y_test, y_wrong_test, dataset, attack_type, root_path='data'):
-    train_path = root_path+sep+'modified'+sep+dataset+sep+attack_type+sep
+    transformation_type = 'adversarial_attack'
+    train_path = root_path+sep+'training_set'+sep+transformation_type+sep+dataset+sep+attack_type+sep
     train_images = train_path+'train-images-npy.gz'
     train_labels = train_path+'train-labels-npy.gz'
     wrong_train_labels = train_path+'wrong-train-labels-npy.gz'
     
-    test_path = root_path+sep+'modified'+sep+dataset+sep+attack_type+sep
+    test_path = root_path+sep+'benchmark_dataset'+sep+transformation_type+sep+dataset+sep+attack_type+sep
     test_images = test_path+'test-images-npy.gz'
     test_labels = test_path+'test-labels-npy.gz'
     wrong_test_labels = test_path+'wrong-test-labels-npy.gz'
@@ -302,11 +304,12 @@ def save_adversarial_data(x_train, y_train, y_wrong_train, x_test, y_test, y_wro
 
 def load_adv_data(dataset, variation_type, root_path='data'):
 
-    fixed_path = root_path+sep+'modified'+sep+dataset+sep+variation_type+sep
+    fixed_path = root_path+sep+'training_set'+sep+dataset+sep+variation_type+sep
     train_images = fixed_path+'train-images-npy.gz'
     train_labels = fixed_path+'train-labels-npy.gz'
     wrong_train_labels = fixed_path+'wrong-train-labels-npy.gz'
     
+    fixed_path = root_path+sep+'benchmark_dataset'+sep+dataset+sep+variation_type+sep
     test_images = fixed_path+'test-images-npy.gz'
     test_labels = fixed_path+'test-labels-npy.gz'
     wrong_test_labels = fixed_path+'wrong-test-labels-npy.gz'
@@ -332,34 +335,6 @@ def load_adv_data(dataset, variation_type, root_path='data'):
     return (x_train, y_train, y_train_wrong), (x_test, y_test, y_test_wrong)
 
 
-def load_data(dataset, variation_type, root_path='data'):
-
-    fixed_path = root_path+sep+'modified'+sep+dataset+sep+variation_type+sep
-    train_images = fixed_path+'train-images-npy.gz'
-    train_labels = fixed_path+'train-labels-npy.gz'
-    
-    test_images = fixed_path+'test-images-npy.gz'
-    test_labels = fixed_path+'test-labels-npy.gz'
-
-    f = gzip.GzipFile(train_images, "r")
-    x_train = np.load(f)
-    #x_train = np.frombuffer(x_train)#, dtype=i.dtype
-    #x_train = np.fromfile(f)
-    
-    f = gzip.GzipFile(train_labels, "r")
-    y_train = np.load(f)
-
-    f = gzip.GzipFile(test_images, "r")
-    x_test = np.load(f)
-
-    f = gzip.GzipFile(test_labels, "r")
-    y_test = np.load(f)
-    
-    #print("load_drift_mnist: ", x_train.shape)
-
-    return (x_train, y_train), (x_test, y_test)
-
-
 def reshaping_data(x_train, x_test, img_rows, img_cols, img_dim):
     if K.image_data_format() == 'channels_first':
         x_train = x_train.reshape(x_train.shape[0], img_dim, img_rows, img_cols)
@@ -374,3 +349,48 @@ def reshaping_data(x_train, x_test, img_rows, img_cols, img_dim):
     x_test /= 255
 
     return x_train, x_test
+
+
+def load_dataset_variation(threat_type, variation_type, dataset_name, mode, root_path='data'):
+   
+    x_train, y_train, x_test, y_test = None, None, None, None
+    if mode == 'train':
+        fixed_path = root_path+sep+'training_set'+sep+threat_type+sep+variation_type+sep
+        if dataset_name != None:
+            fixed_path = root_path+sep+'training_set'+sep+threat_type+sep+dataset_name+sep+variation_type+sep
+
+        print('loading data from', fixed_path)
+        train_images = fixed_path+'train-images-npy.gz'
+        train_labels = fixed_path+'train-labels-npy.gz'
+
+        f = gzip.GzipFile(train_images, "r")
+        x_train = np.load(f)
+        
+        f = gzip.GzipFile(train_labels, "r")
+        y_train = np.load(f)
+
+    elif mode == 'test':
+        fixed_path = root_path+sep+'benchmark_dataset'+sep+threat_type+sep+variation_type+sep
+        if dataset_name != None:
+            fixed_path = root_path+sep+'benchmark_dataset'+sep+threat_type+sep+dataset_name+sep+variation_type+sep
+        
+        print('loading data from', fixed_path)
+        test_images = fixed_path+'test-images-npy.gz'
+        test_labels = fixed_path+'test-labels-npy.gz'
+
+        f = gzip.GzipFile(test_images, "r")
+        x_test = np.load(f)
+
+        f = gzip.GzipFile(test_labels, "r")
+        y_test = np.load(f)
+    
+    #print("load_drift_mnist: ", x_train.shape)
+
+    return (x_train, y_train), (x_test, y_test)
+    
+    
+
+
+def load_data(threat_type, variation_type, mode, dataset_name, root_path='data'):
+    load_dataset_variation(threat_type, variation_type, mode, dataset_name, root_path='data')
+    

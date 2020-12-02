@@ -6,7 +6,9 @@ from datasets import Dataset
 import tensorflow as tf
 from tensorflow import keras
 import argparse
-
+import util
+import plot_funcs
+import numpy as np
 
 
 def generate_models(filename, folder, datasets):
@@ -33,11 +35,13 @@ filename = '_tf_keras.h5'
 # uncomment and execute this line below (once) to build the base models
 #generate_models(filename, folder, datasets)
 
-# datasets
-datasets = ['mnist', 'cifar10', 'gtsrb'] #  
+# source datasets
+original_dataset_names = ['cifar10', 'gtsrb'] #  'mnist', , 'btsc'
 
 # ML threats
-novelty_types = [('gtsrb', 'btsc'), ('gtsrb', 'cifar10')] # each tuple corresponds to (ID data, OOD data)
+# each tuple corresponds to (ID data, OOD data)
+novelty_types = [('gtsrb', 'btsc')] # ('gtsrb', 'btsc'), ('cifar10', 'gtsrb'), ('gtsrb', 'cifar10')
+
 cd_types = ['cvt', 'cht', 'cdt', 'rotated']
 anomaly_types = ['pixel_trap', 'row_add_logic', 'shifted_pixel']
 attack_types = ['FGSM']
@@ -65,40 +69,40 @@ if __name__ == "__main__":
 
 	args = parser.parse_args()
 
-	'''
-	for dataset in datasets:
-		data = Dataset(dataset)
+	for dataset_name in original_dataset_names:
+		data = Dataset(dataset_name)
+
 		x_train, y_train, x_test, y_test = data.load_dataset()
-		train = x_train, y_train
-		test = x_test, y_test
+		train = (x_train, y_train)
+		test = (x_test, y_test)
 		#load model
-		model_file = os.path.join(folder,dataset+filename)
+		model_file = os.path.join(folder,dataset_name+filename)
 		ml_model = tf.keras.models.load_model(model_file)
-	'''
-	if args.sub_field_arg == 'novelty_detection':
-		for dataset_names in novelty_types:
-			status = gd.generate_novelty_data(dataset_names, args.save_experiments, args.parallel_execution, args.verbose, args.dir_path_write) # , proportion=0.3 = percentage of ID data kept for test data
-			print(dataset_names, status)
+	
+		if args.sub_field_arg == 'novelty_detection':
+			for dataset_names in novelty_types:
+				status = gd.generate_novelty_data(dataset_names, args.save_experiments, args.parallel_execution, args.verbose, args.dir_path_write) # , proportion=0.3 = percentage of ID data kept for test data
+				print(dataset_names, status)
 
-	elif args.sub_field_arg == 'distributional_shift':
-		for cd_type in cd_types:
-			status = gd.generate_drift_data((train, test), dataset, cd_type, args.save_experiments)
-			print(dataset, cd_type, status)
+		elif args.sub_field_arg == 'distributional_shift':
+			for cd_type in cd_types:
+				status = gd.generate_drift_data(train, test, dataset, cd_type, args.save_experiments)
+				print(dataset, cd_type, status)
 
-	elif args.sub_field_arg == 'anomaly_detection':
-		for anomaly_type in anomaly_types:
-			status = gd.generate_anomaly_data((train, test), dataset, anomaly_type, args.save_experiments)
-			print(dataset, anomaly_type, status)
+		elif args.sub_field_arg == 'anomaly_detection':
+			for anomaly_type in anomaly_types:
+				status = gd.generate_anomaly_data(train, test, dataset, anomaly_type, args.save_experiments)
+				print(dataset, anomaly_type, status)
 
-	elif args.sub_field_arg == 'adversarial_attack':
-		for attack_type in attack_types:
-			status = gd.generate_adversarial_data((train, test), dataset, ml_model, attack_type, args.save_experiments)
-			print(dataset, attack_type, status)
+		elif args.sub_field_arg == 'adversarial_attack':
+			for attack_type in attack_types:
+				status = gd.generate_adversarial_data(train, test, dataset, ml_model, attack_type, args.save_experiments)
+				print(dataset, attack_type, status)
 
-	elif args.sub_field_arg == 'noise':
-		for corruption_type in corruption_types:
-			status = gd.generate_corrupted_data((train, test), dataset, corruption_type, args.save_experiments)
-			print(dataset, corruption_type, status)
+		elif args.sub_field_arg == 'noise':
+			for corruption_type in corruption_types:
+				status = gd.generate_corrupted_data(train, test, dataset, corruption_type, args.save_experiments)
+				print(dataset, corruption_type, status)
 
-	else:
-		print("ML-threat category not found")
+		else:
+			print("OOD type not found!!")

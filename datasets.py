@@ -2,7 +2,8 @@ import os
 import util
 import keras
 from keras.datasets import mnist
-from keras.datasets import cifar10
+#import tensorflow_datasets.public_api as tfds
+from tensorflow.keras.datasets import cifar10
 import numpy as np
 import pandas as pd
 from PIL import Image
@@ -11,6 +12,7 @@ import cv2
 import keras.backend as K
 from sklearn.model_selection import train_test_split
 from tensorflow.keras.utils import to_categorical
+import plot_funcs
 
 
 class Dataset:
@@ -98,12 +100,12 @@ class Dataset:
             return dict
 
         num_batches = 5
-        data = unpickle(self.trainPath+'1')
+        data = unpickle(trainPath+'1')
         x_train = data[b'data']
         y_train = data[b'labels']
         
         for i in range(1, num_batches+1):
-            data = unpickle(self.trainPath+str(i))
+            data = unpickle(trainPath+str(i))
             x_train = np.append(x_train, data[b'data'])
             y_train = np.append(y_train, data[b'labels'])
 
@@ -117,6 +119,8 @@ class Dataset:
         x_test = x_test.astype('float32')
         x_train /= 255
         x_test /= 255
+        x_train = np.reshape(self.height, self.width, self.channels)
+        x_test = np.reshape(self.height, self.width, self.channels)
 
         return x_train, y_train, x_test, y_test
 
@@ -180,7 +184,7 @@ class Dataset:
             self.channels = 3
             self.height, self.width = 28, 28
 
-            self.data_dir = os.path.join(self.data_dir, 'GTSRB')
+            self.data_dir = os.path.join(self.data_dir, 'gtsrb')
             X_train, y_train = self.load_GTSRB_csv("Train.csv")
             X_test, y_test = self.load_GTSRB_csv("Test.csv")
 
@@ -191,8 +195,10 @@ class Dataset:
             self.channels = 3
             self.height, self.width = 32, 32
             (x_train, y_train), (x_test, y_test) = cifar10.load_data()
-
-            return x_train, y_train, x_test, y_test
+            
+            #plot_funcs.plot_images(x_train[:50], y_train[:50], 5, 10)
+            #plot_funcs.plot_images(x_test[:50], y_test[:50], 5, 10)
+            return x_train/255, np.squeeze(y_train), x_test/255, np.squeeze(y_test)
 
         elif self.dataset_name == 'btsc':
             self.num_classes = 62
@@ -207,31 +213,7 @@ class Dataset:
             return x_train, y_train, x_test, y_test
 
         else:
-            print("Dataset not found!!")
-            return None
-
-
-    def load_dataset_variation(self, variation):
-        img_rows, img_cols, img_dim = 0, 0, 0
-
-        if self.dataset_name == 'mnist':
-            self.num_classes = 10
-            self.channels = 1
-            img_rows, img_cols = 28, 28
-        elif self.dataset_name == 'gtsrb':
-            self.num_classes = 43
-            self.channels = 3
-            img_rows, img_cols = 28, 28
-        elif self.dataset_name == 'cifar10':
-            self.num_classes = 10
-            self.channels = 3
-            img_rows, img_cols = 32, 32
-   
-        try:
-            (x_train, y_train), (x_test, y_test) = util.load_data(self.dataset_name, variation)
-            return x_train, y_train, x_test, y_test
-        except:
-            print("Dataset not found!!")
+            print("Dataset {} not found!!".format(self.dataset_name))
             return None
 
 
