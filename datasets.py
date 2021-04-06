@@ -198,7 +198,7 @@ class Dataset:
             
             #plot_funcs.plot_images(x_train[:50], y_train[:50], 5, 10)
             #plot_funcs.plot_images(x_test[:50], y_test[:50], 5, 10)
-            return x_train/255, np.squeeze(y_train), x_test/255, np.squeeze(y_test)
+            return x_train/255., np.squeeze(y_train), x_test/255., np.squeeze(y_test)
 
         elif self.dataset_name == 'btsc':
             self.num_classes = 62

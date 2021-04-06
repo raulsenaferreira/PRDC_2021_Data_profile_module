@@ -31,13 +31,13 @@ def test_generate_drift_data(dataset_name, cd_type, amount):
 	status = gd.generate_translated_data(train[:amount], test[:amount], dataset_name, cd_type, persist_data = True)
 	print(dataset_name, cd_type, status)
 
-def test_generate_anomaly_data(dataset_name, anomaly_type, amount):
+def test_generate_anomaly_data(dataset_name, anomaly_type, severity, amount):
 	data = Dataset(dataset_name)
 	x_train, y_train, x_test, y_test = data.load_dataset()
 	train = x_train, y_train
 	test = x_test, y_test
 	print("generating", anomaly_type, dataset_name)
-	status = gd.generate_anomaly_data(train[:amount], test[:amount], dataset_name, anomaly_type, persist_data = True)
+	status = gd.generate_anomaly_data(train[:amount], test[:amount], dataset_name, anomaly_type, severity, persist_data = True)
 	print(dataset_name, anomaly_type, status)
 
 def test_generate_adversarial_data(dataset_name, model_file, attack_type, amount):
@@ -46,24 +46,26 @@ def test_generate_adversarial_data(dataset_name, model_file, attack_type, amount
 	x_train, y_train, x_test, y_test = data.load_dataset()
 	train = x_train[:amount], y_train[:amount]
 	test = x_test[:amount], y_test[:amount]
+	data = [train, test]
 	print("generating", attack_type, dataset_name)
-	status = gd.generate_adversarial_data((train, test), dataset_name, ml_model, attack_type, persist_data = True)
+	status = gd.generate_adversarial_data(data, dataset_name, ml_model, attack_type, persist_data = True)
 	print(dataset_name, attack_type, status)
 
-def test_generate_corrupted_data(dataset_name, corruption_type, amount):
+def test_generate_corrupted_data(dataset_name, corruption_type, threat_type, severity, amount):
 	data = Dataset(dataset_name)
 	x_train, y_train, x_test, y_test = data.load_dataset()
 	train = x_train[:amount], y_train[:amount]
 	test = x_test[:amount], y_test[:amount]
 	print("generating", corruption_type, dataset_name)
-	status = gd.generate_corrupted_data(train, test, dataset_name, corruption_type, persist_data = True)
+	status = gd.generate_corrupted_data(train, test, dataset_name, corruption_type, threat_type, severity, persist_data = True)
 	print(dataset_name, corruption_type, status)
 
-def test_plot_generated_dataset(dataset_name, variation, threat_type, num_samples, num_row, num_col):
-	dataset = Dataset(dataset_name)
+def test_plot_generated_dataset(dataset_name, variation, threat_type, severity, num_samples, num_row, num_col):
+	compl = '' if severity == None else '_severity_{}'.format(severity)
+	#dataset = Dataset(dataset_name)
 	#x_train, y_train, x_test, y_test = dataset.load_dataset()
 	#x_train, y_train, x_test, y_test = dataset.load_dataset_variation(variation)
-	(_, _), (x_test, y_test) = util.load_dataset_variation(threat_type, variation, dataset_name, 'test')
+	(_, _), (x_test, y_test) = util.load_dataset_variation(threat_type, variation+compl, dataset_name, 'test')
 	plot_images(x_test[:num_samples], y_test[:num_samples], num_row=num_row, num_col=num_col)
 
 def test_plot_adv_generated_dataset(dataset_name, variation, num_samples, num_row, num_col):
@@ -76,54 +78,75 @@ def test_plot_adv_generated_dataset(dataset_name, variation, num_samples, num_ro
 
 print("running test...")
 sep =  get_separator()
-num_samples = 40
-num_row = 4
+num_samples = 100
+num_row = 10
 num_col = 10
 
-# Testing MNIST dataset and its variants
-dataset_name = 'gtsrb'
+
+dataset_name = 'cifar10'
 # testing ploting original dataset ### OK
 #test_plot_original_dataset(dataset_name, num_samples, num_row, num_col)
 
-'''
-# Testing distributional shift  ### NOT OK (no difference in the image)
-cd_types = ['cvt', 'cht', 'cdt', 'rotated']
-for cd_type in cd_types:
-	test_generate_drift_data(dataset_name, cd_type, num_samples)
-	test_plot_generated_dataset(dataset_name, cd_type, num_samples, num_row, num_col)
+# Testing novelty detection OK for gtsrb and cifar10
+
 
 '''
-
-# Testing anomalies  ### NOT OK (no difference in the image)
-threat_type = 'anomaly_detection'
-anomaly_types = ['pixel_trap', 'row_add_logic', 'shifted_pixel']
-for anomaly_type in anomaly_types:
-	test_generate_anomaly_data(dataset_name, anomaly_type, num_samples)
-	test_plot_generated_dataset(dataset_name, anomaly_type, threat_type, num_samples, num_row, num_col)
-
-'''
-# testing adversarial examples
+# testing adversarial examples ### not OK
 attack_types = ['FGSM']
 folder = 'models'
 filename = '_tf_keras.h5'
 model_file = folder+sep+dataset_name+filename
-for attack_type in attack_types:
-	test_generate_adversarial_data(dataset_name, model_file, attack_type, num_samples)
-	test_plot_adv_generated_dataset(dataset_name, attack_type, 10, 2, 5)
 
-# testing noise
-corruption_types = ['spatter', 'elastic_transform', 'gaussian_noise', 'shot_noise', 'impulse_noise', 'speckle_noise', 'defocus_blur', 
-'glass_blur', 'zoom_blur', 'gaussian_blur', 'brightness', 'contrast', 'saturate'] 
-for corruption_type in corruption_types:
-	test_generate_corrupted_data(dataset_name, corruption_type, num_samples)
-	test_plot_generated_dataset(dataset_name, corruption_type, num_samples, num_row, num_col)
+for attack_type in attack_types:
+	test_generate_adversarial_data(dataset_name, model_file, attack_type, 1000)
+	test_plot_adv_generated_dataset(dataset_name, attack_type, num_samples, num_row, num_col)
 '''
 
 
+#'''
+# Testing anomalies  ### OK for gtsrb and cifar10
+array_severity = [1, 3]
+threat_type = 'anomaly_detection'
+anomaly_types = ['pixel_trap', 'row_add_logic', 'shifted_pixel']
+for anomaly_type in anomaly_types:
+	for severity in array_severity:
+		test_generate_anomaly_data(dataset_name, anomaly_type, severity, num_samples)
+		test_plot_generated_dataset(dataset_name, anomaly_type, threat_type, severity, num_samples, num_row, num_col)
+#'''
 
 
+'''
+# testing noise ### OK for gtsrb and cifar10
+array_severity = [1, 5]
+corruption_types = ['spatter', 'gaussian_noise', 'shot_noise', 'speckle_noise', 'defocus_blur',
+'elastic_transform', 'impulse_noise', 'glass_blur', 'zoom_blur', 'gaussian_blur', 'pixelate']
+
+threat_type = 'noise'
+for corruption_type in corruption_types:
+	for severity in array_severity:
+		test_generate_corrupted_data(dataset_name, corruption_type, threat_type, severity, num_samples)
+		test_plot_generated_dataset(dataset_name, corruption_type, threat_type, severity, num_samples, num_row, num_col)
+'''
 
 
+'''
+# testing distributional shift ### OK for gtsrb and cifar10
+threat_type = 'distributional_shift'
+arr_variation = ['snow', 'fog', 'brightness', 'contrast', 'saturate']
+array_severity = [2, 5]
+
+for corruption_type in arr_variation:
+	for severity in array_severity:
+		test_generate_corrupted_data(dataset_name, corruption_type, threat_type, severity, num_samples)
+		test_plot_generated_dataset(dataset_name, corruption_type, threat_type, severity, num_samples, num_row, num_col)
+
+# Testing rotating data  ### OK (does not make sense for signs)
+threat_type = 'distributional_shift'
+cd_types = ['rotated']
+for cd_type in cd_types:
+	test_generate_drift_data(dataset_name, cd_type, num_samples)
+	test_plot_generated_dataset(dataset_name, cd_type, threat_type, None, num_samples, num_row, num_col)
+'''
 
 
 '''

@@ -303,13 +303,13 @@ def save_adversarial_data(x_train, y_train, y_wrong_train, x_test, y_test, y_wro
 
 
 def load_adv_data(dataset, variation_type, root_path='data'):
-
-    fixed_path = root_path+sep+'training_set'+sep+dataset+sep+variation_type+sep
+    transformation_type = 'adversarial_attack'
+    fixed_path = root_path+sep+'training_set'+sep+transformation_type+dataset+sep+variation_type+sep
     train_images = fixed_path+'train-images-npy.gz'
     train_labels = fixed_path+'train-labels-npy.gz'
     wrong_train_labels = fixed_path+'wrong-train-labels-npy.gz'
     
-    fixed_path = root_path+sep+'benchmark_dataset'+sep+dataset+sep+variation_type+sep
+    fixed_path = root_path+sep+'benchmark_dataset'+sep+transformation_type+dataset+sep+variation_type+sep
     test_images = fixed_path+'test-images-npy.gz'
     test_labels = fixed_path+'test-labels-npy.gz'
     wrong_test_labels = fixed_path+'wrong-test-labels-npy.gz'

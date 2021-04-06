@@ -32,8 +32,8 @@ def rotating_data(images, labels, correcting=None):
         if correcting==None:
 
             # register original data
-            X.append(image)
-            y.append(label)
+            #X.append(image)
+            #y.append(label)
             
             angles = [-45, -22.5, 22.5, 45]
             

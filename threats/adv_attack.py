@@ -42,7 +42,7 @@ def perform_attacks(data, ml_model, dataset_name):
                 adversarial = image + perturbations * epsilon
                 
                 x.append(adversarial)
-                y.append(labels[N])
+                y.append(label)
             
             
             x = np.asarray(x)
@@ -51,8 +51,10 @@ def perform_attacks(data, ml_model, dataset_name):
             
             yield  x, y
             
-    (x_train, y_train) = data[0]
-    (x_test, y_test) = data[1]
+    train = data[0]
+    test = data[1]
+    x_train, y_train = train
+    x_test, y_test = test
     dim = 1 if dataset_name =='mnist' else 3
     img_rows, img_cols, channels, num_classes = x_train.shape[1], x_train.shape[2], dim, len(np.unique(y_train))
     #(x_train, y_train), (x_test, y_test) = mnist.load_data()
@@ -63,14 +65,14 @@ def perform_attacks(data, ml_model, dataset_name):
     # MNIST
     #labels = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine']
 
-    x_train = x_train / 255
-    x_test = x_test / 255
+    #x_train = x_train / 255
+    #x_test = x_test / 255
 
     x_train = x_train.reshape((-1, img_rows, img_cols, channels))
     x_test = x_test.reshape((-1, img_rows, img_cols, channels))
     
-    y_train = tf.keras.utils.to_categorical(y_train, num_classes)
-    y_test = tf.keras.utils.to_categorical(y_test, num_classes)
+    #y_train = tf.keras.utils.to_categorical(y_train, num_classes)
+    #y_test = tf.keras.utils.to_categorical(y_test, num_classes)
 
     print("Data shape", x_test.shape, y_test.shape, x_train.shape, y_train.shape)
 
