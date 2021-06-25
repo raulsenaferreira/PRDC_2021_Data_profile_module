@@ -80,7 +80,7 @@ class Dataset:
 
         d=[]
         for j in labels:
-            path = os.path.join(self.data_dir, j.replace("/", "\\"))
+            path = os.path.join(self.data_dir, j) #.replace("/", "\\")
             
             i1=cv2.imread(path)
             i2=Image.fromarray(i1,'RGB')
@@ -216,7 +216,7 @@ class Dataset:
             print("Dataset {} not found!!".format(self.dataset_name))
             return None
 
-
+    '''
     def load_dataset_adv(self, variation):
         img_rows, img_cols, img_dim = 0, 0, 0
 
@@ -235,12 +235,12 @@ class Dataset:
    
         try:
             (x_train, y_train, y_train_miss), (x_test, y_test, y_test_miss) = util.load_adv_data(self.dataset_name, variation)
-            return x_train, y_train, y_train_miss, x_test, y_test, y_test_miss
+            return x_train/255., np.squeeze(y_train), np.squeeze(y_train_miss), x_test/255., np.squeeze(y_test), np.squeeze(y_test_miss)
         except:
             print("Dataset not found!!")
             return None
 
-
+    '''
 
 
 '''

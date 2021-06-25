@@ -50,7 +50,7 @@ def generate_transformed_data(dataset_name, transformation_type, threat_type, se
 arr_transformations = None
 
 # source datasets
-original_dataset_names = ['cifar10', 'gtsrb']
+original_dataset_names = ['cifar10', 'gtsrb'] #
 
 #rotation_types = ['cvt', 'cht', 'cdt', 'rotated']
 
@@ -101,12 +101,21 @@ if __name__ == "__main__":
 		#generate_models(filename, folder, datasets)
 
 		attack_types = ['FGSM']
-		#load model
-		model_file = os.path.join(folder,dataset_name+filename)
-		ml_model = tf.keras.models.load_model(model_file)
-		for attack_type in attack_types:
-			status = gd.generate_adversarial_data(train, test, dataset_name, ml_model, attack_type, args.save_experiments)
-			print(dataset_name, attack_type, status)
+		epsilon = 0.05 #intensity of the perturbation
+		for dataset_name in original_dataset_names:
+			#load model
+			model_file = os.path.join(folder,dataset_name+filename)
+			ml_model = tf.keras.models.load_model(model_file)
+
+			data = Dataset(dataset_name)
+			x_train, y_train, x_test, y_test = data.load_dataset()
+			train = x_train, y_train
+			test = x_test, y_test
+
+			for attack_type in attack_types:
+				print("generating", attack_type, dataset_name)
+				status = gd.generate_adversarial_data(train, test, dataset_name, ml_model, attack_type, epsilon, args.save_experiments)
+				print(dataset_name, attack_type, status)
 
 	else:
 		print("OOD type not found!!")
@@ -117,4 +126,4 @@ if __name__ == "__main__":
 				for severity in array_severity:
 					status = generate_transformed_data(dataset_name, transformation_type, args.sub_field_arg, severity)
 					#status = gd.generate_anomaly_data(train, test, dataset_name, anomaly_type, args.save_experiments)
-					print(dataset_name, transformation_type, 'severity:'+str(severity), status)
+					print(dataset_name, transformation_type, 'severity_'+str(severity), status)

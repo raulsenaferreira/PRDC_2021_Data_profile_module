@@ -172,11 +172,11 @@ def save_data(x_train, y_train, x_test, y_test, dataset, threat_type, transforma
     test_images = test_path+'test-images-npy.gz'
     test_labels = test_path+'test-labels-npy.gz'
     
-    dim = x_train.shape[1]
+    #dim = x_train.shape[1]
     
-    if x_test.shape[1] != x_test.shape[1]:
-        print("dimensions from train and test are different")
-        return False
+    #if x_test.shape[1] != x_test.shape[1]:
+    #    print("dimensions from train and test are different")
+    #    return False
 
     #checking/creating directories
     os.makedirs(os.path.dirname(train_images), exist_ok=True)
@@ -249,22 +249,20 @@ def save_data_novelty(x_train, y_train, x_test, y_test, dataset_names, root_path
 
 
 def save_adversarial_data(x_train, y_train, y_wrong_train, x_test, y_test, y_wrong_test, dataset, attack_type, root_path='data'):
-    transformation_type = 'adversarial_attack'
-    train_path = root_path+sep+'training_set'+sep+transformation_type+sep+dataset+sep+attack_type+sep
+    threat_type = 'adversarial_attack'
+    train_path = root_path+sep+'training_set'+sep+threat_type+sep+dataset+sep+attack_type+sep
     train_images = train_path+'train-images-npy.gz'
     train_labels = train_path+'train-labels-npy.gz'
     wrong_train_labels = train_path+'wrong-train-labels-npy.gz'
     
-    test_path = root_path+sep+'benchmark_dataset'+sep+transformation_type+sep+dataset+sep+attack_type+sep
+    test_path = root_path+sep+'benchmark_dataset'+sep+threat_type+sep+dataset+sep+attack_type+sep
     test_images = test_path+'test-images-npy.gz'
     test_labels = test_path+'test-labels-npy.gz'
     wrong_test_labels = test_path+'wrong-test-labels-npy.gz'
     
-    dim = x_train.shape[1]
-    
-    if x_test.shape[1] != x_test.shape[1]:
-        print("dimensions from train and test are different")
-        return False
+    #if x_train.shape[2] != x_test.shape[2]:
+    #    print("dimensions from train and test are different")
+    #    return False
 
     #checking/creating directories
     os.makedirs(os.path.dirname(train_images), exist_ok=True)
@@ -304,12 +302,14 @@ def save_adversarial_data(x_train, y_train, y_wrong_train, x_test, y_test, y_wro
 
 def load_adv_data(dataset, variation_type, root_path='data'):
     transformation_type = 'adversarial_attack'
-    fixed_path = root_path+sep+'training_set'+sep+transformation_type+dataset+sep+variation_type+sep
+    fixed_path = root_path+sep+'training_set'+sep+transformation_type+sep+dataset+sep+variation_type+sep
+    print('loading training  data from', fixed_path)
     train_images = fixed_path+'train-images-npy.gz'
     train_labels = fixed_path+'train-labels-npy.gz'
     wrong_train_labels = fixed_path+'wrong-train-labels-npy.gz'
     
-    fixed_path = root_path+sep+'benchmark_dataset'+sep+transformation_type+dataset+sep+variation_type+sep
+    fixed_path = root_path+sep+'benchmark_dataset'+sep+transformation_type+sep+dataset+sep+variation_type+sep
+    print('loading test data from', fixed_path)
     test_images = fixed_path+'test-images-npy.gz'
     test_labels = fixed_path+'test-labels-npy.gz'
     wrong_test_labels = fixed_path+'wrong-test-labels-npy.gz'

@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 #based on this tutorial: 
 #https://github.com/EvolvedSquid/tutorials/blob/master/adversarial-attacks-defenses/adversarial-tutorial.py
 
-def perform_attacks(data, ml_model, dataset_name):
+def perform_attacks(x_train, y_train, x_test, y_test, ml_model, dataset_name, epsilon):
 
     # Function to create adversarial pattern
     def adversarial_pattern(image, label):#, model):
@@ -29,8 +29,10 @@ def perform_attacks(data, ml_model, dataset_name):
         while True:
             x = []
             y = []
-            for N in range(batch_size):
-                #N = random.randint(0, 100)
+            for batch in range(batch_size):
+                #if batch_size > 10000 and batch % 1000 == 0:
+                    #print(batch/batch_size)
+                N = random.randint(0, 100)
 
                 label = labels[N]
                 
@@ -38,23 +40,19 @@ def perform_attacks(data, ml_model, dataset_name):
                 
                 image = data[N]
                 
-                epsilon = 0.1
                 adversarial = image + perturbations * epsilon
                 
                 x.append(adversarial)
                 y.append(label)
             
             
-            x = np.asarray(x)
-            x = x.reshape((batch_size, img_rows, img_cols, channels))
+            x = np.asarray(x).reshape((batch_size, img_rows, img_cols, channels))
+            #x = x.reshape((batch_size, img_rows, img_cols, channels))
             y = np.asarray(y)
             
             yield  x, y
             
-    train = data[0]
-    test = data[1]
-    x_train, y_train = train
-    x_test, y_test = test
+
     dim = 1 if dataset_name =='mnist' else 3
     img_rows, img_cols, channels, num_classes = x_train.shape[1], x_train.shape[2], dim, len(np.unique(y_train))
     #(x_train, y_train), (x_test, y_test) = mnist.load_data()
@@ -81,20 +79,24 @@ def perform_attacks(data, ml_model, dataset_name):
     num_adversaries_test = len(y_test)
 
     #train
-    adversarials, correct_labels = next(generate_adversarials(num_adversaries_train, x_train, y_train))
+    x_adversarial_training, y_adversarial_training = next(generate_adversarials(num_adversaries_train, x_train, y_train))
     x_train_adv = []
     y_train_adv = []
     y_train_miss = [] # wrong label given by the classifier
+    #print('y_adversarial_test', len(y_adversarial_test))
+    #print('x_adversarial_test', len(x_adversarial_test))
 
-    for adversarial, correct_label in zip(adversarials, correct_labels):    
-        adversarial.reshape((1, img_rows, img_cols, channels))
-        ind_adv = ml_model.predict(adversarial.reshape((1, img_rows, img_cols, channels))).argmax()
-        adv_exple = y_train[ind_adv].argmax()
-        y_true = correct_label.argmax()
-        #print(adv_exple, y_true)
-        if adv_exple != y_true:
-            y_train_adv.append(y_true)
-            y_train_miss.append(adv_exple)
+    for adversarial, correct_label in zip(x_adversarial_training, y_adversarial_training):    
+        #adversarial.reshape((1, img_rows, img_cols, channels))
+        pred_adv = ml_model.predict(adversarial.reshape((1, img_rows, img_cols, channels))).argmax()
+        #adv_exple = y_train[ind_adv].argmax()
+        #y_true = correct_label.argmax()
+        #print(pred_adv, correct_label)
+
+        # saving just imgs that fool the classifier
+        if pred_adv != correct_label:
+            y_train_adv.append(correct_label)
+            y_train_miss.append(pred_adv)
             if channels == 1:
                 #plt.imshow(adversarial.reshape(img_rows, img_cols))
                 x_train_adv.append(adversarial.reshape(img_rows, img_cols))
@@ -102,7 +104,9 @@ def perform_attacks(data, ml_model, dataset_name):
                 #plt.imshow(adversarial)
                 x_train_adv.append(adversarial)
             #plt.show()
+
     x_train_adv = np.asarray(x_train_adv)
+    y_train_adv = np.asarray(y_train_adv)
     print("x_train_adv.shape: ", x_train_adv.shape)
 
     #test
@@ -112,14 +116,12 @@ def perform_attacks(data, ml_model, dataset_name):
     y_test_miss = [] # wrong label given by the classifier
 
     for adversarial, correct_label in zip(adversarials, correct_labels):    
-        adversarial.reshape((1, img_rows, img_cols, channels))
-        ind_adv = ml_model.predict(adversarial.reshape((1, img_rows, img_cols, channels))).argmax()
-        adv_exple = y_test[ind_adv].argmax()
-        y_true = correct_label.argmax()
-        #print(adv_exple, y_true)
-        if adv_exple != y_true:
-            y_test_adv.append(y_true)
-            y_test_miss.append(adv_exple)
+        pred_adv = ml_model.predict(adversarial.reshape((1, img_rows, img_cols, channels))).argmax()
+
+        # saving just imgs that fool the classifier
+        if pred_adv != correct_label:
+            y_test_adv.append(correct_label)
+            y_test_miss.append(pred_adv)
             if channels == 1:
                 #plt.imshow(adversarial.reshape(img_rows, img_cols))
                 x_test_adv.append(adversarial.reshape(img_rows, img_cols))
@@ -127,7 +129,9 @@ def perform_attacks(data, ml_model, dataset_name):
                 #plt.imshow(adversarial)
                 x_test_adv.append(adversarial)
             #plt.show()
+
     x_test_adv = np.asarray(x_test_adv)
+    y_test_adv = np.asarray(y_test_adv)
     print("x_test_adv.shape: ", x_test_adv.shape)
 
     return x_train_adv, y_train_adv, y_train_miss, x_test_adv, y_test_adv, y_test_miss

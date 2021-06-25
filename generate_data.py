@@ -92,12 +92,36 @@ def generate_anomaly_data(train, test, dataset, anomaly_type, severity, persist_
         return success
 
 
-def generate_adversarial_data(data, dataset_name, ml_model, attack_type, persist_data = False):
+def generate_adversarial_data(train, test, dataset_name, ml_model, attack_type, epsilon, persist_data):
+    if dataset_name == 'cifar10':
+        num_classes = 10
+    elif dataset_name == 'gtsrb':
+        num_classes = 43
+
     success = False
-    x_train, y_train, y_wrong_train, x_test, y_test, y_wrong_test = None, None, None, None, None, None
+    #x_train, y_train, y_wrong_train, x_test, y_test, y_wrong_test = [], [], [], [], [], []
+
+    x_train, y_train = train
+    x_test, y_test = test
+
+    # copy the images before modify them
+    x_train_adv = np.copy(x_train)
+    y_train_adv = np.copy(y_train)
+    x_test_adv = np.copy(x_test)
+    y_test_adv = np.copy(y_test)
     
     if attack_type == 'FGSM':
-        x_train, y_train, y_wrong_train, x_test, y_test, y_wrong_test = adv_attack.perform_attacks(data, ml_model, dataset_name)
+        x_train_adv, y_train_adv, y_wrong_train, x_test_adv, y_test_adv, y_wrong_test = adv_attack.perform_attacks(x_train_adv, y_train_adv, x_test_adv, y_test_adv, ml_model, dataset_name, epsilon)
+
+    # different labels for OOD data
+    y_train_adv = y_train_adv+num_classes
+    y_test_adv = y_test_adv+num_classes
+
+    # concatenating and shuffling ID and OOD data for the test set
+    x_test = np.vstack([x_train_adv, x_test, x_test_adv])
+    y_test = np.hstack([y_train_adv, y_test, y_test_adv])
+    x_test, y_test = util.unison_shuffled_copies(x_test, y_test)
+    print("Final testing set shape", x_test.shape, y_test.shape)
 
     if persist_data:
         success = util.save_adversarial_data(x_train, y_train, y_wrong_train, x_test, y_test, y_wrong_test, dataset_name, attack_type)
@@ -125,6 +149,10 @@ def perform_corruptions(train, test, num_classes, corruption, array_severity):
     for img, label in zip(copy_x_test, copy_y_test):
         corrupted_y_test.append(label+num_classes) # avoiding same class numbers for the two datasets
         corrupted_x_test.append(np.uint8(corruption(img)))
+
+    # correcting pixel values from the corrupted images
+    corrupted_x_train = [img / 255 for img in corrupted_x_train]
+    corrupted_x_test = [img / 255 for img in corrupted_x_test]
 
     # concatenating and shuffling ID and OOD data for the test set
     x_test = np.vstack([x_test, corrupted_x_train, corrupted_x_test])
@@ -170,6 +198,7 @@ def generate_corrupted_data(train, test, dataset_name, corruption_type, threat_t
 
     corruption = lambda clean_img: d[corruption_type](clean_img, severity)
     x_train, y_train, x_test, y_test = perform_corruptions(train, test, num_classes, corruption, severity)
+    #x_train = x_train/255.0
 
     if persist_data:
         success = util.save_data(x_train, y_train, x_test, y_test, dataset_name, threat_type, corruption_type+"_severity_"+str(severity))
