@@ -169,6 +169,44 @@ class Dataset:
         return X, y
 
 
+
+    def load_carla_dataset(self, folder):
+        # Reading the input images and putting them into a numpy array
+        images=[]
+        self.width = 1720
+        self.height = 800
+        
+        n_inputs = self.height * self.width * self.channels
+
+        file_names = [os.path.join(folder, f) for f in os.listdir(folder) if f.endswith(".png")]
+
+        for f in file_names:
+            image=cv2.imread(f)
+            #image=skimage.data.imread(f)
+            image_from_array = Image.fromarray(image, 'RGB')
+            size_image = image_from_array.resize((self.height, self.width))
+            image = np.array(size_image)
+
+            images.append(image)
+            
+        X=np.array(images)
+        X= X/255.0
+
+        '''
+        s=np.arange(X.shape[0])
+        np.random.seed(self.num_classes)
+        np.random.shuffle(s)
+
+        X=X[s]
+        y=y[s]
+        '''
+        
+        print("data shape :", X.shape)
+                
+        return X
+
+
+
     def load_dataset(self):
 
         if self.dataset_name == 'mnist':
@@ -211,6 +249,16 @@ class Dataset:
             x_test, y_test = self.load_BTSC_dataset(folder)
         
             return x_train, y_train, x_test, y_test
+
+        elif self.dataset_name == 'carla_scenario':
+            self.num_classes = 0
+            self.channels = 3
+            self.height, self.width = 800, 1720
+
+            folder = os.path.join(self.data_dir, 'carla_scenario')
+            X = self.load_carla_dataset(folder)
+            
+            return X
 
         else:
             print("Dataset {} not found!!".format(self.dataset_name))

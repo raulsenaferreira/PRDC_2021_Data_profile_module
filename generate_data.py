@@ -164,6 +164,23 @@ def perform_corruptions(train, test, num_classes, corruption, array_severity):
     return x_train, y_train, np.asarray(x_test), np.asarray(y_test)
 
 
+def perform_carla_corruptions(images, corruption, array_severity):
+    corrupted_X = []
+    X = images
+
+    # copy the images before modify them
+    copy_X = np.copy(X)
+    
+    print("corrupting data set")
+    for img in copy_X:
+        corrupted_X.append(np.uint8(corruption(img)))
+
+    # correcting pixel values from the corrupted images
+    corrupted_X = [img / 255 for img in corrupted_X]
+
+    return np.asarray(corrupted_X)
+
+
 def generate_corrupted_data(train, test, dataset_name, corruption_type, threat_type, severity, persist_data = False):
     if dataset_name == 'gtsrb':
         num_classes = 43
@@ -202,6 +219,45 @@ def generate_corrupted_data(train, test, dataset_name, corruption_type, threat_t
 
     if persist_data:
         success = util.save_data(x_train, y_train, x_test, y_test, dataset_name, threat_type, corruption_type+"_severity_"+str(severity))
+        print(dataset_name, corruption_type+"_severity_"+str(severity), success)
+    
+    return success
+
+
+def generate_corrupted_carla_data(images, dataset_name, corruption_type, threat_type, severity, persist_data = False):
+
+    ### rule for building corrupted dataset
+    # train with ID training data
+    # test with 100% of OOD data (modified training + modified test) + ID testing data
+    success = False
+
+    d = collections.OrderedDict()
+    d['snow'] = corruptions.snow
+    #d['frost'] = corruptions.frost #failure
+    d['fog'] = corruptions.fog
+    d['spatter'] = corruptions.spatter
+    d['elastic_transform'] = corruptions.elastic_transform
+    d['gaussian_noise'] = corruptions.gaussian_noise
+    d['shot_noise'] = corruptions.shot_noise
+    d['impulse_noise'] = corruptions.impulse_noise
+    d['speckle_noise'] = corruptions.speckle_noise
+    d['defocus_blur'] = corruptions.defocus_blur
+    d['glass_blur'] = corruptions.glass_blur
+    d['zoom_blur'] = corruptions.zoom_blur
+    d['gaussian_blur'] = corruptions.gaussian_blur
+    #d['motion_blur'] = corruptions.motion_blur #failure
+    d['brightness'] = corruptions.brightness
+    d['contrast'] = corruptions.contrast
+    d['saturate'] = corruptions.saturate
+    d['pixelate'] = corruptions.pixelate
+    #d['JPEG'] = corruptions.jpeg_compression #failure    
+
+    corruption = lambda clean_img: d[corruption_type](clean_img, severity)
+    corrupted_images = perform_carla_corruptions(images, corruption, severity)
+    #corrupted_images = corrupted_images/255.0
+
+    if persist_data:
+        success = util.save_carla_data(corrupted_images, dataset_name, threat_type, corruption_type+"_severity_"+str(severity))
         print(dataset_name, corruption_type+"_severity_"+str(severity), success)
     
     return success

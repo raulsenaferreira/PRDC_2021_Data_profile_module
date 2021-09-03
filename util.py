@@ -204,6 +204,27 @@ def save_data(x_train, y_train, x_test, y_test, dataset, threat_type, transforma
     return True
 
 
+def save_carla_data(corrupted_images, dataset, threat_type, transformation_type, root_path='data'):
+    path = root_path+sep+'benchmark_dataset'+sep+threat_type+sep+dataset+sep+transformation_type+sep
+    path_images = path+'carla_scenario-images-npy.gz'
+    
+    #dim = train_images.shape[1]
+    
+    #if x_test.shape[1] != x_test.shape[1]:
+    #    print("dimensions from train and test are different")
+    #    return False
+
+    #checking/creating directories
+    os.makedirs(os.path.dirname(path_images), exist_ok=True)
+    
+    #writing images
+    f = gzip.GzipFile(path_images, "w")
+    np.save(file=f, arr=corrupted_images)
+    f.close()
+
+    return True
+
+
 def save_data_novelty(x_train, y_train, x_test, y_test, dataset_names, root_path):
     transformation_type = 'novelty_detection'
     dataset_name = '{}_{}'.format(dataset_names[0], dataset_names[1])
@@ -385,6 +406,19 @@ def load_dataset_variation(threat_type, variation_type, dataset_name, mode, root
         y_test = np.load(f)
     
     #print("load_drift_mnist: ", x_train.shape)
+
+    elif mode == 'CARLA':
+        fixed_path = root_path+sep+'benchmark_dataset'+sep+threat_type+sep+variation_type+sep
+        if dataset_name != None:
+            fixed_path = root_path+sep+'benchmark_dataset'+sep+threat_type+sep+dataset_name+sep+variation_type+sep
+        
+        print('loading data from', fixed_path)
+        path_images = fixed_path+'carla_scenario-images-npy.gz'
+
+        f = gzip.GzipFile(path_images, "r")
+        X = np.load(f)
+
+        return X
 
     return (x_train, y_train), (x_test, y_test)
     
