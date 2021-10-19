@@ -1,3 +1,6 @@
+# Code modified from the paper "A baseline for detecting misclassified and out-of-distribution examples in neural networks"
+## Original authorship: Hendrycks, Dan and Gimpel, Kevin
+### arXiv preprint arXiv:1610.02136
 # -*- coding: utf-8 -*-
 
 import os
